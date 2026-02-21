@@ -1,47 +1,52 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { stripThinkTags } from "@/lib/ideaParsing";
+import { Idea } from "@/lib/types";
+import ToolOutputModal from "./ToolOutputModal";
+
+export interface ToolExecution {
+    id: string;
+    name: string;
+    args: any;
+    result?: any;
+}
 
 interface Props {
     content: string;
+    ideas: Idea[];
     isLoading: boolean;
-    toolCalls: string[];
+    toolExecutions: ToolExecution[];
 }
 
-interface IdeaBlock {
-    title: string;
-    oneLiner: string;
-    problem: string;
-    market: string;
-    signal: string;
-    revenue: string;
-    source: string;
+function formatIdeaForClipboard(idea: Idea): string {
+    return [
+        `Title: ${idea.title}`,
+        `One-liner: ${idea.oneLiner}`,
+        `Problem: ${idea.problem}`,
+        `Target market: ${idea.targetMarket}`,
+        `Market signal: ${idea.marketSignal}`,
+        `Revenue model: ${idea.revenueModel}`,
+        `Sources: ${idea.source.join(", ")}`,
+    ].join("\n");
 }
 
-function stripThinkTags(text: string): string {
-    // Remove complete <think>...</think> blocks
-    let stripped = text.replace(/<think>[\s\S]*?<\/think>/gi, "");
-    // Remove any unclosed opening <think> tag and everything after it (still streaming)
-    stripped = stripped.replace(/<think>[\s\S]*/i, "");
-    return stripped.trim();
-}
-
-function parseIdeas(text: string): IdeaBlock[] {
-    const sections = text.split(/\n---\n/).filter((s) => s.includes("##"));
-    return sections.map((s) => {
-        const title = s.match(/##\s+💡\s*(.*)/)?.[1]?.trim() || "SaaS Idea";
-        const oneLiner = s.match(/\*\*One-liner:\*\*\s*(.*)/)?.[1]?.trim() || "";
-        const problem = s.match(/\*\*Problem:\*\*\s*(.*)/)?.[1]?.trim() || "";
-        const market = s.match(/\*\*Target market:\*\*\s*(.*)/)?.[1]?.trim() || "";
-        const signal = s.match(/\*\*Market signal:\*\*\s*(.*)/)?.[1]?.trim() || "";
-        const revenue = s.match(/\*\*Revenue model:\*\*\s*(.*)/)?.[1]?.trim() || "";
-        const source = s.match(/\*\*Source:\*\*\s*(.*)/)?.[1]?.trim() || "";
-        return { title, oneLiner, problem, market, signal, revenue, source };
-    });
-}
-
-function IdeaCard({ idea, index }: { idea: IdeaBlock; index: number }) {
+function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
     const [hovered, setHovered] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const router = useRouter();
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(formatIdeaForClipboard(idea));
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1200);
+        } catch {
+            setCopied(false);
+        }
+    };
 
     return (
         <div
@@ -52,7 +57,7 @@ function IdeaCard({ idea, index }: { idea: IdeaBlock; index: number }) {
                 border: `1px solid ${hovered ? "var(--border-hover)" : "var(--border)"}`,
                 borderRadius: "3px",
                 padding: "1.5rem",
-                animation: `fadeUp 0.5s ${index * 0.1}s ease both`,
+                animation: `fadeUp 0.5s ${index * 0.08}s ease both`,
                 transition: "border-color 0.25s, transform 0.25s, box-shadow 0.25s",
                 transform: hovered ? "translateY(-2px)" : "translateY(0)",
                 boxShadow: hovered ? "0 8px 40px rgba(245,166,35,0.06)" : "none",
@@ -60,7 +65,6 @@ function IdeaCard({ idea, index }: { idea: IdeaBlock; index: number }) {
                 overflow: "hidden",
             }}
         >
-            {/* Number badge */}
             <div
                 style={{
                     position: "absolute",
@@ -77,7 +81,6 @@ function IdeaCard({ idea, index }: { idea: IdeaBlock; index: number }) {
                 {String(index + 1).padStart(2, "0")}
             </div>
 
-            {/* Title */}
             <h3
                 style={{
                     fontFamily: "var(--font-display)",
@@ -92,7 +95,6 @@ function IdeaCard({ idea, index }: { idea: IdeaBlock; index: number }) {
                 {idea.title}
             </h3>
 
-            {/* One-liner */}
             {idea.oneLiner && (
                 <p
                     style={{
@@ -106,17 +108,16 @@ function IdeaCard({ idea, index }: { idea: IdeaBlock; index: number }) {
                 </p>
             )}
 
-            {/* Tags grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
                 {[
                     { label: "Problem", value: idea.problem },
-                    { label: "Target Market", value: idea.market },
-                    { label: "Market Signal", value: idea.signal },
-                    { label: "Revenue Model", value: idea.revenue },
+                    { label: "Target Market", value: idea.targetMarket },
+                    { label: "Market Signal", value: idea.marketSignal },
+                    { label: "Revenue Model", value: idea.revenueModel },
                 ]
-                    .filter((f) => f.value)
-                    .map((f) => (
-                        <div key={f.label}>
+                    .filter((field) => field.value)
+                    .map((field) => (
+                        <div key={field.label}>
                             <div
                                 style={{
                                     fontSize: "0.65rem",
@@ -127,66 +128,150 @@ function IdeaCard({ idea, index }: { idea: IdeaBlock; index: number }) {
                                     marginBottom: "0.2rem",
                                 }}
                             >
-                                {f.label}
+                                {field.label}
                             </div>
                             <div style={{ fontSize: "0.8rem", color: "var(--text-primary)", lineHeight: 1.5 }}>
-                                {f.value}
+                                {field.value}
                             </div>
                         </div>
                     ))}
             </div>
 
-            {/* Source */}
-            {idea.source && (
+            {idea.source.length > 0 && (
                 <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)" }}>
                     <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                        Source →{" "}
+                        Sources
                     </span>
-                    {idea.source.startsWith("http") ? (
-                        <a
-                            href={idea.source}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ fontSize: "0.75rem", color: "var(--accent)", textDecoration: "none", wordBreak: "break-all" }}
-                        >
-                            {idea.source}
-                        </a>
-                    ) : (
-                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{idea.source}</span>
-                    )}
+                    <div style={{ marginTop: "0.35rem", display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+                        {idea.source.slice(0, 3).map((source) => (
+                            source.startsWith("http") ? (
+                                <a
+                                    key={source}
+                                    href={source}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ fontSize: "0.75rem", color: "var(--accent)", textDecoration: "none", wordBreak: "break-all" }}
+                                >
+                                    {source}
+                                </a>
+                            ) : (
+                                <span key={source} style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                                    {source}
+                                </span>
+                            )
+                        ))}
+                    </div>
                 </div>
             )}
+
+            <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <button
+                    onClick={() => router.push(`/ideas/${idea.id}`)}
+                    style={{
+                        background: "var(--accent)",
+                        border: "1px solid var(--accent)",
+                        borderRadius: "2px",
+                        color: "#000",
+                        fontFamily: "var(--font-display)",
+                        fontWeight: 700,
+                        fontSize: "0.75rem",
+                        letterSpacing: "0.04em",
+                        padding: "0.45rem 0.9rem",
+                        cursor: "pointer",
+                    }}
+                >
+                    Open Details
+                </button>
+                <button
+                    onClick={handleCopy}
+                    style={{
+                        background: "transparent",
+                        border: "1px solid var(--border)",
+                        borderRadius: "2px",
+                        color: copied ? "var(--accent)" : "var(--text-secondary)",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "0.72rem",
+                        padding: "0.45rem 0.9rem",
+                        cursor: "pointer",
+                    }}
+                >
+                    {copied ? "Copied" : "Copy Idea"}
+                </button>
+            </div>
         </div>
     );
 }
 
-function ToolCallBadge({ query }: { query: string }) {
+function ToolCallBadge({ execution, onClick }: { execution: ToolExecution; onClick: () => void }) {
+    const isSearch = execution.name === "webSearch";
+    const label = isSearch ? `Search: "${execution.args.query}"` : `Read: ${execution.args.url?.slice(0, 30)}...`;
+
     return (
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.75rem", background: "var(--accent-dim)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: "100px", fontSize: "0.7rem", fontFamily: "var(--font-mono)", color: "var(--accent)", width: "fit-content", animation: "fadeUp 0.3s ease both" }}>
+        <button
+            onClick={onClick}
+            title="Click to view raw research data"
+            style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.4rem 0.75rem",
+                background: "var(--accent-dim)",
+                border: "1px solid rgba(245,166,35,0.2)",
+                borderRadius: "100px",
+                fontSize: "0.7rem",
+                fontFamily: "var(--font-mono)",
+                color: "var(--accent)",
+                width: "fit-content",
+                animation: "fadeUp 0.3s ease both",
+                cursor: "pointer",
+                transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--accent)";
+                e.currentTarget.style.background = "rgba(245,166,35,0.15)";
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "rgba(245,166,35,0.2)";
+                e.currentTarget.style.background = "var(--accent-dim)";
+            }}
+        >
             <span style={{ width: "6px", height: "6px", background: "var(--accent)", borderRadius: "50%", display: "inline-block", animation: "pulse-ring 1.5s ease infinite" }} />
-            Searching: "{query}"
-        </div>
+            {label}
+            {execution.result && (
+                <span style={{ fontSize: "0.6rem", opacity: 0.7, marginLeft: "0.2rem" }}>✓</span>
+            )}
+        </button>
     );
 }
 
-export default function StreamingResults({ content, isLoading, toolCalls }: Props) {
+export default function StreamingResults({ content, ideas, isLoading, toolExecutions }: Props) {
+    const [selectedExecution, setSelectedExecution] = useState<ToolExecution | null>(null);
+
+    const displayIdeas = ideas;
     const clean = stripThinkTags(content);
-    const ideas = parseIdeas(clean);
-    const hasFullText = clean.length > 50;
 
     return (
         <div style={{ width: "100%", maxWidth: "900px", margin: "0 auto" }}>
-            {/* Tool call indicators */}
-            {toolCalls.length > 0 && (
+            {toolExecutions.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.5rem" }}>
-                    {toolCalls.map((q, i) => (
-                        <ToolCallBadge key={i} query={q} />
+                    {toolExecutions.map((exec) => (
+                        <ToolCallBadge
+                            key={exec.id}
+                            execution={exec}
+                            onClick={() => setSelectedExecution(exec)}
+                        />
                     ))}
                 </div>
             )}
 
-            {/* Loading skeleton */}
-            {isLoading && ideas.length === 0 && (
+            {selectedExecution && (
+                <ToolOutputModal
+                    execution={selectedExecution}
+                    onClose={() => setSelectedExecution(null)}
+                />
+            )}
+
+            {isLoading && displayIdeas.length === 0 && (
                 <div style={{ display: "grid", gap: "1rem" }}>
                     {[0, 1, 2].map((i) => (
                         <div key={i} style={{ height: "180px", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "3px", animation: `fadeUp 0.4s ${i * 0.08}s ease both`, overflow: "hidden", position: "relative" }}>
@@ -196,19 +281,29 @@ export default function StreamingResults({ content, isLoading, toolCalls }: Prop
                 </div>
             )}
 
-            {/* Parsed idea cards */}
-            {ideas.length > 0 && (
+            {displayIdeas.length > 0 && (
                 <div style={{ display: "grid", gap: "1rem" }}>
-                    {ideas.map((idea, i) => (
-                        <IdeaCard key={i} idea={idea} index={i} />
+                    {displayIdeas.map((idea, index) => (
+                        <IdeaCard key={idea.id || `${idea.title}-${index}`} idea={idea} index={index} />
                     ))}
                 </div>
             )}
 
-            {/* Raw text fallback if parsing didn't get cards yet but there's content */}
-            {hasFullText && ideas.length === 0 && !isLoading && (
-                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "3px", padding: "1.5rem", fontFamily: "var(--font-mono)", fontSize: "0.825rem", color: "var(--text-primary)", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
-                    {clean}
+            {!isLoading && displayIdeas.length === 0 && clean.length > 50 && (
+                <div style={{
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "3px",
+                    padding: "2rem",
+                    textAlign: "center",
+                    color: "var(--text-secondary)",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "0.8rem",
+                    lineHeight: 2,
+                }}>
+                    <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>🔍</div>
+                    <div style={{ color: "var(--text-primary)", fontWeight: 600, marginBottom: "0.25rem" }}>Research complete - no structured ideas detected</div>
+                    <div>The model output format was unexpected. Re-run search or adjust your model settings.</div>
                 </div>
             )}
         </div>

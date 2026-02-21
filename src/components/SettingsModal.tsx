@@ -78,12 +78,25 @@ export default function SettingsModal({ onClose }: Props) {
                         onChange={(v) => setSettings({ ...settings, modelId: v })}
                     />
                     <Field
-                        label="API Key"
+                        label="LLM API Key"
                         placeholder="sk-..."
                         value={settings.apiKey}
                         onChange={(v) => setSettings({ ...settings, apiKey: v })}
                         type="password"
                     />
+
+                    <div style={{ borderTop: "1px solid var(--border)", paddingTop: "1.25rem", marginTop: "0.5rem" }}>
+                        <div style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1rem" }}>
+                            Search Configuration
+                        </div>
+                        <Field
+                            label="Tavily API Key"
+                            placeholder="tvly-..."
+                            value={settings.tavilyApiKey}
+                            onChange={(v) => setSettings({ ...settings, tavilyApiKey: v })}
+                            type="password"
+                        />
+                    </div>
                 </div>
 
                 {/* Footer */}

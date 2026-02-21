@@ -2,6 +2,7 @@ export interface AppSettings {
     baseUrl: string;
     modelId: string;
     apiKey: string;
+    tavilyApiKey: string;
 }
 
 const STORAGE_KEY = "ideasurge_settings";
@@ -10,6 +11,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     baseUrl: "https://api.openai.com/v1",
     modelId: "gpt-4o-mini",
     apiKey: "",
+    tavilyApiKey: "",
 };
 
 export function getSettings(): AppSettings {

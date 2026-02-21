@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import SearchBar from "@/components/SearchBar";
-import StreamingResults from "@/components/StreamingResults";
+import StreamingResults, { ToolExecution } from "@/components/StreamingResults";
+import { parseIdeasFromText } from "@/lib/ideaParsing";
+import { getIdeas, saveIdeas } from "@/lib/ideaStore";
 import { getSettings } from "@/lib/settings";
+import { Idea } from "@/lib/types";
 
 const SettingsModal = dynamic(() => import("@/components/SettingsModal"), { ssr: false });
 
@@ -12,10 +15,21 @@ export default function Home() {
     const [showSettings, setShowSettings] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [content, setContent] = useState("");
-    const [toolCalls, setToolCalls] = useState<string[]>([]);
+    const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
+    const [ideas, setIdeas] = useState<Idea[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
+    const [restoredCount, setRestoredCount] = useState(0);
     const abortRef = useRef<AbortController | null>(null);
+
+    useEffect(() => {
+        const restoredIdeas = getIdeas();
+        if (restoredIdeas.length > 0) {
+            setIdeas(restoredIdeas);
+            setHasSearched(true);
+            setRestoredCount(restoredIdeas.length);
+        }
+    }, []);
 
     const handleSearch = useCallback(async (query: string) => {
         const settings = getSettings();
@@ -25,15 +39,16 @@ export default function Home() {
             return;
         }
 
-        // Abort any previous request
         abortRef.current?.abort();
         abortRef.current = new AbortController();
 
         setIsLoading(true);
         setContent("");
-        setToolCalls([]);
+        setToolExecutions([]);
+        setIdeas([]);
         setError(null);
         setHasSearched(true);
+        setRestoredCount(0);
 
         try {
             const res = await fetch("/api/search", {
@@ -53,6 +68,7 @@ export default function Home() {
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
             let fullText = "";
+            const createdAt = new Date().toISOString();
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -63,21 +79,55 @@ export default function Home() {
 
                 for (const line of lines) {
                     if (line.startsWith("0:")) {
-                        // Text token
                         try {
                             const token = JSON.parse(line.slice(2));
                             fullText += token;
                             setContent(fullText);
-                        } catch { }
+                            const partialIdeas = parseIdeasFromText(fullText, createdAt);
+                            if (partialIdeas.length > 0) {
+                                setIdeas(partialIdeas);
+                            }
+                        } catch {
+                            // ignore malformed chunk
+                        }
                     } else if (line.startsWith("9:")) {
-                        // Tool call
                         try {
                             const toolData = JSON.parse(line.slice(2));
-                            const toolQuery = toolData?.args?.query || toolData?.toolName || "web";
-                            setToolCalls((prev) => [...prev, toolQuery]);
-                        } catch { }
+                            setToolExecutions((prev) => [
+                                ...prev,
+                                {
+                                    id: toolData.toolCallId,
+                                    name: toolData.toolName,
+                                    args: toolData.args,
+                                },
+                            ]);
+                        } catch {
+                            // ignore malformed chunk
+                        }
+                    } else if (line.startsWith("a:")) {
+                        try {
+                            const resultData = JSON.parse(line.slice(2));
+                            setToolExecutions((prev) =>
+                                prev.map((te) =>
+                                    te.id === resultData.toolCallId
+                                        ? { ...te, result: resultData.result }
+                                        : te
+                                )
+                            );
+                        } catch {
+                            // ignore malformed chunk
+                        }
                     }
                 }
+            }
+
+            const parsedIdeas = parseIdeasFromText(fullText, createdAt);
+            if (parsedIdeas.length > 0) {
+                setIdeas(parsedIdeas);
+                saveIdeas(parsedIdeas);
+            } else {
+                setIdeas([]);
+                saveIdeas([]);
             }
         } catch (err: unknown) {
             if ((err as { name?: string }).name === "AbortError") return;
@@ -90,7 +140,6 @@ export default function Home() {
 
     return (
         <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-            {/* Top bar */}
             <nav
                 style={{
                     display: "flex",
@@ -119,48 +168,41 @@ export default function Home() {
                         IdeaSurge
                     </span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    <span style={{ fontSize: "0.7rem", fontFamily: "var(--font-mono)", color: "var(--text-secondary)", display: "none" }}>
-                        AI-Powered SaaS Discovery
-                    </span>
-                    <button
-                        onClick={() => setShowSettings(true)}
-                        title="Settings"
-                        style={{
-                            background: "none",
-                            border: "1px solid var(--border)",
-                            borderRadius: "2px",
-                            color: "var(--text-secondary)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.4rem",
-                            padding: "0.4rem 0.75rem",
-                            cursor: "pointer",
-                            fontSize: "0.7rem",
-                            fontFamily: "var(--font-mono)",
-                            transition: "border-color 0.2s, color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = "var(--accent)";
-                            e.currentTarget.style.color = "var(--accent)";
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = "var(--border)";
-                            e.currentTarget.style.color = "var(--text-secondary)";
-                        }}
-                    >
-                        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-                        </svg>
-                        Settings
-                    </button>
-                </div>
+                <button
+                    onClick={() => setShowSettings(true)}
+                    title="Settings"
+                    style={{
+                        background: "none",
+                        border: "1px solid var(--border)",
+                        borderRadius: "2px",
+                        color: "var(--text-secondary)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.4rem",
+                        padding: "0.4rem 0.75rem",
+                        cursor: "pointer",
+                        fontSize: "0.7rem",
+                        fontFamily: "var(--font-mono)",
+                        transition: "border-color 0.2s, color 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = "var(--accent)";
+                        e.currentTarget.style.color = "var(--accent)";
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = "var(--border)";
+                        e.currentTarget.style.color = "var(--text-secondary)";
+                    }}
+                >
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                    </svg>
+                    Settings
+                </button>
             </nav>
 
-            {/* Main content */}
             <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                {/* Hero */}
                 <section
                     style={{
                         padding: hasSearched ? "3rem 2rem 2rem" : "5rem 2rem 3rem",
@@ -170,7 +212,6 @@ export default function Home() {
                 >
                     {!hasSearched && (
                         <>
-                            {/* Eyebrow */}
                             <div
                                 style={{
                                     display: "inline-flex",
@@ -223,12 +264,30 @@ export default function Home() {
                         </>
                     )}
 
-                    {/* Search bar — always visible */}
                     <div style={{ animation: "fadeUp 0.5s 0.3s ease both" }}>
                         <SearchBar onSearch={handleSearch} isLoading={isLoading} />
                     </div>
 
-                    {/* Error */}
+                    {restoredCount > 0 && !isLoading && (
+                        <div
+                            style={{
+                                marginTop: "1rem",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                                background: "var(--accent-dim)",
+                                border: "1px solid rgba(245,166,35,0.3)",
+                                borderRadius: "2px",
+                                padding: "0.45rem 0.85rem",
+                                fontSize: "0.75rem",
+                                fontFamily: "var(--font-mono)",
+                                color: "var(--accent)",
+                            }}
+                        >
+                            Restored {restoredCount} saved ideas
+                        </div>
+                    )}
+
                     {error && (
                         <div
                             style={{
@@ -251,17 +310,19 @@ export default function Home() {
                     )}
                 </section>
 
-                {/* Results */}
                 {hasSearched && (
                     <section style={{ padding: "0 2rem 4rem", animation: "fadeUp 0.4s ease both" }}>
-                        <StreamingResults content={content} isLoading={isLoading} toolCalls={toolCalls} />
+                        <StreamingResults
+                            content={content}
+                            ideas={ideas}
+                            isLoading={isLoading}
+                            toolExecutions={toolExecutions}
+                        />
                     </section>
                 )}
 
-                {/* Empty state */}
                 {!hasSearched && (
                     <div style={{ padding: "0 2rem 4rem", textAlign: "center" }}>
-                        {/* Stats row */}
                         <div
                             style={{
                                 display: "flex",
@@ -291,7 +352,6 @@ export default function Home() {
                 )}
             </main>
 
-            {/* Footer */}
             <footer
                 style={{
                     borderTop: "1px solid var(--border)",
@@ -304,14 +364,13 @@ export default function Home() {
                 }}
             >
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--text-muted)" }}>
-                    IdeaSurge — Powered by AI SDK
+                    IdeaSurge - Powered by AI SDK
                 </span>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--text-muted)" }}>
                     Bring your own LLM provider
                 </span>
             </footer>
 
-            {/* Settings Modal */}
             {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
         </div>
     );
