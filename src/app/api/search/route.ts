@@ -102,7 +102,8 @@ Rules:
       "targetMarket": "string",
       "marketSignal": "string",
       "revenueModel": "string",
-      "source": ["string", "string"]
+      "source": ["string", "string"],
+      "category": "string"
     }
   ]
 }
@@ -112,6 +113,7 @@ Quality bar:
 - Use webSearch first, then readPage on at least 2 promising URLs.
 - Make marketSignal evidence-specific (communities, trends, stats, recurring complaints).
 - Include 1 to 3 source URLs or source identifiers per idea.
+- category must be short (1-3 words) and meaningful (e.g., "Developer Tools", "Healthcare Ops", "Creator Economy").
 - Keep each field concise and concrete.`;
 
         const result = streamText({

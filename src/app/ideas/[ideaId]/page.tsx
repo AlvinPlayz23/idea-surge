@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { addDeepDive, getDeepDivesByIdeaId, getIdeaById } from "@/lib/ideaStore";
+import { addDeepDive, getDeepDivesByIdeaId, getIdeaById, markIdeaPicked } from "@/lib/ideaStore";
 import { parseDeepDiveFromText } from "@/lib/ideaParsing";
 import { getSettings } from "@/lib/settings";
 import { DeepDiveFocus, DeepDiveRequest, DeepDiveResult, Idea } from "@/lib/types";
@@ -19,25 +19,68 @@ const PRESETS: Preset[] = [
     { label: "Deepen Pricing", focus: "pricing" },
 ];
 
+function headingStyle() {
+    return {
+        display: "inline-block",
+        background: "var(--accent-dim)",
+        border: "1px solid rgba(245,166,35,0.35)",
+        color: "var(--accent)",
+        fontFamily: "var(--font-display)",
+        fontWeight: 700,
+        letterSpacing: "0.01em",
+        borderRadius: "2px",
+        padding: "0.2rem 0.5rem",
+        marginBottom: "0.5rem",
+    } as const;
+}
+
 export default function IdeaDetailPage() {
     const router = useRouter();
     const params = useParams<{ ideaId: string }>();
     const ideaId = params?.ideaId;
 
     const [idea, setIdea] = useState<Idea | null>(null);
+    const [isResolvingIdea, setIsResolvingIdea] = useState(true);
     const [history, setHistory] = useState<DeepDiveResult[]>([]);
-    const [streamOutput, setStreamOutput] = useState("");
     const [customPrompt, setCustomPrompt] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [lastRequest, setLastRequest] = useState<DeepDiveRequest | null>(null);
     const [activeFocus, setActiveFocus] = useState<DeepDiveFocus | null>(null);
+    // Debug-only stream state kept for future troubleshooting.
+    // const [streamOutput, setStreamOutput] = useState("");
 
     useEffect(() => {
         if (!ideaId || typeof ideaId !== "string") return;
-        setIdea(getIdeaById(ideaId));
+        const localIdea = getIdeaById(ideaId);
+        if (localIdea) {
+            setIdea(localIdea);
+            setIsResolvingIdea(false);
+        } else {
+            fetch(`/api/library/${ideaId}`)
+                .then(async (res) => {
+                    if (!res.ok) return null;
+                    const data = await res.json().catch(() => ({}));
+                    return (data.idea ?? null) as Idea | null;
+                })
+                .then((remoteIdea) => {
+                    if (remoteIdea) setIdea(remoteIdea);
+                    setIsResolvingIdea(false);
+                })
+                .catch(() => setIsResolvingIdea(false));
+        }
         setHistory(getDeepDivesByIdeaId(ideaId));
     }, [ideaId]);
+
+    useEffect(() => {
+        if (!idea) return;
+        markIdeaPicked(idea.id);
+        fetch("/api/ideas/mark-picked", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idea }),
+        }).catch(() => undefined);
+    }, [idea]);
 
     const latest = useMemo(() => history[0] ?? null, [history]);
 
@@ -52,7 +95,7 @@ export default function IdeaDetailPage() {
 
         setError(null);
         setIsLoading(true);
-        setStreamOutput("");
+        // setStreamOutput("");
         setLastRequest(request);
         setActiveFocus(request.focus);
 
@@ -80,16 +123,14 @@ export default function IdeaDetailPage() {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-
                 const chunk = decoder.decode(value, { stream: true });
                 const lines = chunk.split("\n");
-
                 for (const line of lines) {
                     if (line.startsWith("0:")) {
                         try {
                             const token = JSON.parse(line.slice(2));
                             fullText += token;
-                            setStreamOutput(fullText);
+                            // setStreamOutput(fullText);
                         } catch {
                             // ignore malformed chunk
                         }
@@ -124,6 +165,16 @@ export default function IdeaDetailPage() {
         );
     }
 
+    if (isResolvingIdea) {
+        return (
+            <main style={{ padding: "3rem 2rem", maxWidth: "960px", margin: "0 auto" }}>
+                <div style={{ border: "1px solid var(--border)", background: "var(--bg-card)", padding: "1.5rem", borderRadius: "3px", color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                    Loading idea...
+                </div>
+            </main>
+        );
+    }
+
     if (!idea) {
         return (
             <main style={{ padding: "3rem 2rem", maxWidth: "960px", margin: "0 auto" }}>
@@ -142,7 +193,7 @@ export default function IdeaDetailPage() {
 
     return (
         <main style={{ padding: "2.5rem 1.25rem 3rem", maxWidth: "1000px", margin: "0 auto" }}>
-            <div style={{ marginBottom: "1rem" }}>
+            <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 <button
                     onClick={() => router.push("/")}
                     style={{
@@ -158,12 +209,32 @@ export default function IdeaDetailPage() {
                 >
                     Back to results
                 </button>
+                <button
+                    onClick={() => router.push("/library")}
+                    style={{
+                        background: "none",
+                        border: "1px solid var(--border)",
+                        color: "var(--text-secondary)",
+                        borderRadius: "2px",
+                        padding: "0.45rem 0.75rem",
+                        cursor: "pointer",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "0.75rem",
+                    }}
+                >
+                    Open library
+                </button>
             </div>
 
             <section style={{ border: "1px solid var(--border)", background: "var(--bg-card)", borderRadius: "3px", padding: "1.25rem", marginBottom: "1rem" }}>
                 <h1 style={{ fontFamily: "var(--font-display)", fontSize: "1.8rem", letterSpacing: "-0.02em", marginBottom: "0.4rem" }}>
                     {idea.title}
                 </h1>
+                {idea.category && (
+                    <div style={{ display: "inline-block", marginBottom: "0.5rem", padding: "0.15rem 0.45rem", border: "1px solid rgba(245,166,35,0.3)", background: "var(--accent-dim)", color: "var(--accent)", borderRadius: "2px", fontFamily: "var(--font-mono)", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                        {idea.category}
+                    </div>
+                )}
                 <p style={{ color: "var(--accent)", marginBottom: "0.8rem", fontStyle: "italic" }}>{idea.oneLiner}</p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
                     {[
@@ -183,6 +254,7 @@ export default function IdeaDetailPage() {
             </section>
 
             <section style={{ border: "1px solid var(--border)", background: "var(--bg-card)", borderRadius: "3px", padding: "1rem", marginBottom: "1rem" }}>
+                <div style={headingStyle()}>Deepen This Idea</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
                     {PRESETS.map((preset) => (
                         <button
@@ -273,6 +345,8 @@ export default function IdeaDetailPage() {
                 )}
             </section>
 
+            {/* Debug stream panel intentionally disabled for normal UX. */}
+            {/*
             <section style={{ border: "1px solid var(--border)", background: "var(--bg-card)", borderRadius: "3px", padding: "1rem", marginBottom: "1rem" }}>
                 <div style={{ fontSize: "0.7rem", fontFamily: "var(--font-mono)", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: "0.35rem" }}>
                     Streaming output
@@ -281,25 +355,24 @@ export default function IdeaDetailPage() {
                     {streamOutput || "Run a deep-dive action to stream a focused expansion here."}
                 </pre>
             </section>
+            */}
 
             {latest ? (
                 <section style={{ border: "1px solid var(--border)", background: "var(--bg-card)", borderRadius: "3px", padding: "1rem" }}>
-                    <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", marginBottom: "0.45rem" }}>Latest deep-dive</div>
-                    <p style={{ color: "var(--text-primary)", fontSize: "0.9rem", lineHeight: 1.7, marginBottom: "1rem" }}>{latest.summary}</p>
+                    <div style={headingStyle()}>Latest Deep-Dive</div>
+                    <p style={{ color: "var(--text-primary)", fontSize: "0.92rem", lineHeight: 1.7, marginBottom: "1rem" }}>{latest.summary}</p>
 
                     <div style={{ display: "grid", gap: "0.8rem", marginBottom: "1rem" }}>
                         {latest.sections.map((section) => (
-                            <article key={`${latest.generatedAt}-${section.key}`} style={{ border: "1px solid var(--border)", borderRadius: "2px", padding: "0.8rem" }}>
-                                <div style={{ fontFamily: "var(--font-display)", marginBottom: "0.35rem" }}>{section.title}</div>
+                            <article key={`${latest.generatedAt}-${section.key}`} style={{ border: "1px solid var(--border)", borderRadius: "2px", padding: "0.8rem", background: "linear-gradient(180deg, rgba(245,166,35,0.04), rgba(255,255,255,0.01))" }}>
+                                <div style={{ ...headingStyle(), marginBottom: "0.45rem" }}>{section.title}</div>
                                 <div style={{ fontSize: "0.85rem", color: "var(--text-primary)", lineHeight: 1.65 }}>{section.content}</div>
                             </article>
                         ))}
                     </div>
 
-                    <div>
-                        <div style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: "0.25rem" }}>
-                            Source evidence
-                        </div>
+                    <div style={{ marginBottom: "1rem" }}>
+                        <div style={headingStyle()}>Source Evidence</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
                             {latest.sources.length > 0 ? (
                                 latest.sources.map((source) => (
@@ -316,6 +389,24 @@ export default function IdeaDetailPage() {
                             )}
                         </div>
                     </div>
+
+                    <button
+                        onClick={() => router.push(`/ideas/${idea.id}/brainstorm`)}
+                        style={{
+                            background: "var(--accent)",
+                            border: "1px solid var(--accent)",
+                            color: "#000",
+                            borderRadius: "2px",
+                            padding: "0.6rem 0.95rem",
+                            cursor: "pointer",
+                            fontFamily: "var(--font-display)",
+                            fontWeight: 700,
+                            fontSize: "0.78rem",
+                            letterSpacing: "0.02em",
+                        }}
+                    >
+                        Brainstorm More with AI
+                    </button>
                 </section>
             ) : (
                 <section style={{ border: "1px solid var(--border)", background: "var(--bg-card)", borderRadius: "3px", padding: "1.25rem", textAlign: "center", color: "var(--text-secondary)", fontFamily: "var(--font-mono)", fontSize: "0.8rem" }}>

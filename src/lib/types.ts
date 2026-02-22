@@ -7,6 +7,7 @@ export interface Idea {
     marketSignal: string;
     revenueModel: string;
     source: string[];
+    category?: string;
     createdAt: string;
 }
 
@@ -33,8 +34,16 @@ export interface DeepDiveResult {
     generatedAt: string;
 }
 
+export interface IdeaChatMessage {
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    createdAt: string;
+}
+
 export interface IdeaStoreState {
     version: 1;
     ideas: Idea[];
     deepDives: Record<string, DeepDiveResult[]>;
+    chats: Record<string, IdeaChatMessage[]>;
 }

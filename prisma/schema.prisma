@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IdeaStatus {
+  ACTIVE
+  PICKED
+  RECYCLED
+}
+
+model IdeaRecord {
+  id            String     @id @default(cuid())
+  fingerprint   String     @unique
+  title         String
+  oneLiner      String
+  problem       String
+  targetMarket  String
+  marketSignal  String
+  revenueModel  String
+  source        Json
+  category      String
+  status        IdeaStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  recycledAt    DateTime?
+  pickedAt      DateTime?
+  deepDiveCount Int        @default(0)
+  brainstormCount Int      @default(0)
+
+  @@index([status, category])
+  @@index([createdAt])
+}

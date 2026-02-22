@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { stripThinkTags } from "@/lib/ideaParsing";
+import { markIdeaPicked } from "@/lib/ideaStore";
 import { Idea } from "@/lib/types";
 import ToolOutputModal from "./ToolOutputModal";
 
@@ -46,6 +47,16 @@ function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
         } catch {
             setCopied(false);
         }
+    };
+
+    const handleOpenDetails = () => {
+        markIdeaPicked(idea.id);
+        fetch("/api/ideas/mark-picked", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idea }),
+        }).catch(() => undefined);
+        router.push(`/ideas/${idea.id}`);
     };
 
     return (
@@ -94,6 +105,11 @@ function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
             >
                 {idea.title}
             </h3>
+            {idea.category && (
+                <div style={{ display: "inline-block", marginBottom: "0.65rem", padding: "0.15rem 0.45rem", border: "1px solid rgba(245,166,35,0.3)", background: "var(--accent-dim)", color: "var(--accent)", borderRadius: "2px", fontFamily: "var(--font-mono)", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    {idea.category}
+                </div>
+            )}
 
             {idea.oneLiner && (
                 <p
@@ -166,7 +182,7 @@ function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
 
             <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 <button
-                    onClick={() => router.push(`/ideas/${idea.id}`)}
+                    onClick={handleOpenDetails}
                     style={{
                         background: "var(--accent)",
                         border: "1px solid var(--accent)",

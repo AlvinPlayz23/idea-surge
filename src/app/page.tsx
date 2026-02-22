@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
 import StreamingResults, { ToolExecution } from "@/components/StreamingResults";
 import { parseIdeasFromText } from "@/lib/ideaParsing";
-import { getIdeas, saveIdeas } from "@/lib/ideaStore";
+import { getIdeas, getPickedIdeaIds, saveIdeas } from "@/lib/ideaStore";
 import { getSettings } from "@/lib/settings";
 import { Idea } from "@/lib/types";
 
@@ -37,6 +38,17 @@ export default function Home() {
             setShowSettings(true);
             setError("Please configure your API key in Settings first.");
             return;
+        }
+
+        const previousIdeas = getIdeas();
+        const pickedIds = new Set(getPickedIdeaIds());
+        const unpickedIdeas = previousIdeas.filter((idea) => !pickedIds.has(idea.id));
+        if (unpickedIdeas.length > 0) {
+            await fetch("/api/ideas/recycle", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ideas: unpickedIdeas }),
+            }).catch(() => undefined);
         }
 
         abortRef.current?.abort();
@@ -125,6 +137,11 @@ export default function Home() {
             if (parsedIdeas.length > 0) {
                 setIdeas(parsedIdeas);
                 saveIdeas(parsedIdeas);
+                await fetch("/api/ideas/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ideas: parsedIdeas }),
+                }).catch(() => undefined);
             } else {
                 setIdeas([]);
                 saveIdeas([]);
@@ -168,38 +185,58 @@ export default function Home() {
                         IdeaSurge
                     </span>
                 </div>
-                <button
-                    onClick={() => setShowSettings(true)}
-                    title="Settings"
-                    style={{
-                        background: "none",
-                        border: "1px solid var(--border)",
-                        borderRadius: "2px",
-                        color: "var(--text-secondary)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.4rem",
-                        padding: "0.4rem 0.75rem",
-                        cursor: "pointer",
-                        fontSize: "0.7rem",
-                        fontFamily: "var(--font-mono)",
-                        transition: "border-color 0.2s, color 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "var(--accent)";
-                        e.currentTarget.style.color = "var(--accent)";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "var(--border)";
-                        e.currentTarget.style.color = "var(--text-secondary)";
-                    }}
-                >
-                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-                    </svg>
-                    Settings
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <Link
+                        href="/library"
+                        style={{
+                            background: "none",
+                            border: "1px solid var(--border)",
+                            borderRadius: "2px",
+                            color: "var(--text-secondary)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.35rem",
+                            padding: "0.4rem 0.75rem",
+                            fontSize: "0.7rem",
+                            fontFamily: "var(--font-mono)",
+                            textDecoration: "none",
+                        }}
+                    >
+                        Library
+                    </Link>
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        title="Settings"
+                        style={{
+                            background: "none",
+                            border: "1px solid var(--border)",
+                            borderRadius: "2px",
+                            color: "var(--text-secondary)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.4rem",
+                            padding: "0.4rem 0.75rem",
+                            cursor: "pointer",
+                            fontSize: "0.7rem",
+                            fontFamily: "var(--font-mono)",
+                            transition: "border-color 0.2s, color 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "var(--accent)";
+                            e.currentTarget.style.color = "var(--accent)";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "var(--border)";
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                        }}
+                    >
+                        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                        </svg>
+                        Settings
+                    </button>
+                </div>
             </nav>
 
             <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>

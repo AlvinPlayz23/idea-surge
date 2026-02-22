@@ -1,4 +1,4 @@
-import { DeepDiveResult, Idea, IdeaStoreState } from "@/lib/types";
+import { DeepDiveResult, Idea, IdeaChatMessage, IdeaStoreState } from "@/lib/types";
 
 const STORE_KEY = "ideasurge_idea_store";
 const STORE_VERSION = 1;
@@ -7,7 +7,10 @@ const EMPTY_STATE: IdeaStoreState = {
     version: 1,
     ideas: [],
     deepDives: {},
+    chats: {},
 };
+
+const PICKED_ID_KEY = "ideasurge_picked_ids";
 
 function isIdea(value: unknown): value is Idea {
     const idea = value as Idea;
@@ -37,12 +40,24 @@ function isDeepDive(value: unknown): value is DeepDiveResult {
     );
 }
 
+function isChatMessage(value: unknown): value is IdeaChatMessage {
+    const item = value as IdeaChatMessage;
+    return Boolean(
+        item &&
+        (item.role === "user" || item.role === "assistant") &&
+        typeof item.id === "string" &&
+        typeof item.content === "string" &&
+        typeof item.createdAt === "string"
+    );
+}
+
 function sanitize(raw: unknown): IdeaStoreState {
     if (!raw || typeof raw !== "object") return EMPTY_STATE;
     const input = raw as Partial<IdeaStoreState>;
 
     const ideas = Array.isArray(input.ideas) ? input.ideas.filter(isIdea) : [];
     const deepDives: Record<string, DeepDiveResult[]> = {};
+    const chats: Record<string, IdeaChatMessage[]> = {};
 
     if (input.deepDives && typeof input.deepDives === "object") {
         for (const [key, value] of Object.entries(input.deepDives)) {
@@ -52,10 +67,19 @@ function sanitize(raw: unknown): IdeaStoreState {
         }
     }
 
+    if (input.chats && typeof input.chats === "object") {
+        for (const [key, value] of Object.entries(input.chats)) {
+            if (Array.isArray(value)) {
+                chats[key] = value.filter(isChatMessage);
+            }
+        }
+    }
+
     return {
         version: STORE_VERSION,
         ideas,
         deepDives,
+        chats,
     };
 }
 
@@ -105,4 +129,39 @@ export function addDeepDive(ideaId: string, deepDive: DeepDiveResult): void {
 
 export function getDeepDivesByIdeaId(ideaId: string): DeepDiveResult[] {
     return loadIdeaStore().deepDives[ideaId] ?? [];
+}
+
+export function getChatByIdeaId(ideaId: string): IdeaChatMessage[] {
+    return loadIdeaStore().chats[ideaId] ?? [];
+}
+
+export function addChatMessage(ideaId: string, message: IdeaChatMessage): void {
+    const current = loadIdeaStore();
+    const existing = current.chats[ideaId] ?? [];
+    saveIdeaStore({
+        ...current,
+        chats: {
+            ...current.chats,
+            [ideaId]: [...existing, message],
+        },
+    });
+}
+
+export function getPickedIdeaIds(): string[] {
+    if (typeof window === "undefined") return [];
+    try {
+        const raw = localStorage.getItem(PICKED_ID_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter((v) => typeof v === "string") : [];
+    } catch {
+        return [];
+    }
+}
+
+export function markIdeaPicked(ideaId: string): void {
+    if (typeof window === "undefined") return;
+    const picked = new Set(getPickedIdeaIds());
+    picked.add(ideaId);
+    localStorage.setItem(PICKED_ID_KEY, JSON.stringify(Array.from(picked)));
 }

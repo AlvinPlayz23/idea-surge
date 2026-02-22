@@ -9,6 +9,7 @@ interface IdeaOutputPayload {
         marketSignal?: string;
         revenueModel?: string;
         source?: string[] | string;
+        category?: string;
     }>;
 }
 
@@ -71,6 +72,7 @@ function parseMarkdownIdeas(text: string, createdAt: string): Idea[] {
             marketSignal,
             revenueModel,
             source: normalizeSource(sourceRaw),
+            category: "",
             createdAt,
         };
     });
@@ -98,6 +100,7 @@ function parseJsonIdeas(text: string, createdAt: string): Idea[] {
                 marketSignal: item.marketSignal?.trim() || "",
                 revenueModel: item.revenueModel?.trim() || "",
                 source: normalizeSource(item.source),
+                category: item.category?.trim() || "",
                 createdAt,
             };
         });
