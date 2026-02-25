@@ -10,14 +10,20 @@ export default async function LibraryPage() {
         orderBy: [{ pickedAt: "desc" }, { createdAt: "desc" }],
     });
 
-    const grouped = pickedIdeas.reduce<Record<string, typeof pickedIdeas>>((acc, item) => {
-        const key = item.category || "Uncategorized";
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(item);
-        return acc;
-    }, {});
+    type IdeaRow = (typeof pickedIdeas)[number];
+    const grouped = pickedIdeas.reduce<Record<string, IdeaRow[]>>(
+        (acc: Record<string, IdeaRow[]>, item: IdeaRow) => {
+            const key = item.category || "Uncategorized";
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(item);
+            return acc;
+        },
+        {}
+    );
 
-    const categories = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
+    const categories = (Object.entries(grouped) as [string, IdeaRow[]][]).sort(
+        (a, b) => b[1].length - a[1].length
+    );
 
     return (
         <main style={{ minHeight: "100vh", padding: "2rem 1.5rem 4rem", maxWidth: "1000px", margin: "0 auto", position: "relative" }}>
