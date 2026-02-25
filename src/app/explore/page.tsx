@@ -10,12 +10,16 @@ export default async function ExplorePage() {
         orderBy: [{ recycledAt: "desc" }, { createdAt: "desc" }],
     });
 
-    const grouped = recycledIdeas.reduce<Record<string, typeof recycledIdeas>>((acc: Record<string, typeof recycledIdeas>, item) => {
-        const key = item.category || "Uncategorized";
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(item);
-        return acc;
-    }, {});
+    type IdeaRow = (typeof recycledIdeas)[number];
+    const grouped = recycledIdeas.reduce<Record<string, IdeaRow[]>>(
+        (acc: Record<string, IdeaRow[]>, item: IdeaRow) => {
+            const key = item.category || "Uncategorized";
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(item);
+            return acc;
+        },
+        {}
+    );
 
     const categories = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
 
