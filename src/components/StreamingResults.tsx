@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Activity, ClipboardCopy, ArrowRight, CheckCircle2, ChevronRight, Sparkles } from "lucide-react";
 
 import { stripThinkTags } from "@/lib/ideaParsing";
 import { markIdeaPicked } from "@/lib/ideaStore";
@@ -35,7 +37,6 @@ function formatIdeaForClipboard(idea: Idea): string {
 }
 
 function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
-    const [hovered, setHovered] = useState(false);
     const [copied, setCopied] = useState(false);
     const router = useRouter();
 
@@ -43,7 +44,7 @@ function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
         try {
             await navigator.clipboard.writeText(formatIdeaForClipboard(idea));
             setCopied(true);
-            setTimeout(() => setCopied(false), 1200);
+            setTimeout(() => setCopied(false), 2000);
         } catch {
             setCopied(false);
         }
@@ -60,203 +61,219 @@ function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
     };
 
     return (
-        <div
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            whileHover={{ y: -4, boxShadow: "0 12px 40px rgba(0, 0, 0, 0.4)", borderColor: "rgba(255,255,255,0.2)" }}
+            className="glass-panel"
             style={{
-                background: "var(--bg-card)",
-                border: `1px solid ${hovered ? "var(--border-hover)" : "var(--border)"}`,
-                borderRadius: "3px",
-                padding: "1.5rem",
-                animation: `fadeUp 0.5s ${index * 0.08}s ease both`,
-                transition: "border-color 0.25s, transform 0.25s, box-shadow 0.25s",
-                transform: hovered ? "translateY(-2px)" : "translateY(0)",
-                boxShadow: hovered ? "0 8px 40px rgba(245,166,35,0.06)" : "none",
+                padding: "2.5rem",
                 position: "relative",
                 overflow: "hidden",
+                transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
         >
-            <div
-                style={{
-                    position: "absolute",
-                    top: "1rem",
-                    right: "1rem",
-                    fontFamily: "var(--font-display)",
-                    fontSize: "3rem",
-                    fontWeight: 800,
-                    color: "var(--text-muted)",
-                    lineHeight: 1,
-                    userSelect: "none",
-                }}
-            >
-                {String(index + 1).padStart(2, "0")}
-            </div>
+            {/* Subtle Gradient Glow inside Card */}
+            <div style={{
+                position: "absolute",
+                top: 0, right: 0,
+                width: "150px", height: "150px",
+                background: "radial-gradient(circle, rgba(147, 51, 234, 0.15), transparent 70%)",
+                filter: "blur(30px)",
+                zIndex: 0,
+                pointerEvents: "none"
+            }} />
 
-            <h3
-                style={{
-                    fontFamily: "var(--font-display)",
-                    fontSize: "1.15rem",
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                    letterSpacing: "-0.02em",
-                    marginBottom: "0.5rem",
-                    paddingRight: "3rem",
-                }}
-            >
-                {idea.title}
-            </h3>
-            {idea.category && (
-                <div style={{ display: "inline-block", marginBottom: "0.65rem", padding: "0.15rem 0.45rem", border: "1px solid rgba(245,166,35,0.3)", background: "var(--accent-dim)", color: "var(--accent)", borderRadius: "2px", fontFamily: "var(--font-mono)", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    {idea.category}
-                </div>
-            )}
+            <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+                    <motion.h3
+                        layout="position"
+                        style={{
+                            fontFamily: "var(--font-display)",
+                            fontSize: "1.75rem",
+                            fontWeight: 700,
+                            color: "var(--text-primary)",
+                            letterSpacing: "-0.02em",
+                            lineHeight: 1.2,
+                            paddingRight: "2rem"
+                        }}
+                    >
+                        {idea.title}
+                    </motion.h3>
 
-            {idea.oneLiner && (
-                <p
-                    style={{
-                        fontSize: "0.875rem",
-                        color: "var(--accent)",
-                        fontStyle: "italic",
-                        marginBottom: "1rem",
-                    }}
-                >
-                    {idea.oneLiner}
-                </p>
-            )}
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
-                {[
-                    { label: "Problem", value: idea.problem },
-                    { label: "Target Market", value: idea.targetMarket },
-                    { label: "Market Signal", value: idea.marketSignal },
-                    { label: "Revenue Model", value: idea.revenueModel },
-                ]
-                    .filter((field) => field.value)
-                    .map((field) => (
-                        <div key={field.label}>
-                            <div
-                                style={{
-                                    fontSize: "0.65rem",
-                                    fontFamily: "var(--font-mono)",
-                                    color: "var(--text-secondary)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.1em",
-                                    marginBottom: "0.2rem",
-                                }}
-                            >
-                                {field.label}
-                            </div>
-                            <div style={{ fontSize: "0.8rem", color: "var(--text-primary)", lineHeight: 1.5 }}>
-                                {field.value}
-                            </div>
+                    {idea.category && (
+                        <div className="glass-pill" style={{ padding: "0.3rem 0.8rem", color: "var(--accent-teal)", fontSize: "0.75rem", fontWeight: 600, border: "1px solid rgba(20, 184, 166, 0.2)", background: "rgba(20, 184, 166, 0.05)" }}>
+                            {idea.category}
                         </div>
-                    ))}
-            </div>
-
-            {idea.source.length > 0 && (
-                <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)" }}>
-                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                        Sources
-                    </span>
-                    <div style={{ marginTop: "0.35rem", display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-                        {idea.source.slice(0, 3).map((source) => (
-                            source.startsWith("http") ? (
-                                <a
-                                    key={source}
-                                    href={source}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ fontSize: "0.75rem", color: "var(--accent)", textDecoration: "none", wordBreak: "break-all" }}
-                                >
-                                    {source}
-                                </a>
-                            ) : (
-                                <span key={source} style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-                                    {source}
-                                </span>
-                            )
-                        ))}
-                    </div>
+                    )}
                 </div>
-            )}
 
-            <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <button
-                    onClick={handleOpenDetails}
-                    style={{
-                        background: "var(--accent)",
-                        border: "1px solid var(--accent)",
-                        borderRadius: "2px",
-                        color: "#000",
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 700,
-                        fontSize: "0.75rem",
-                        letterSpacing: "0.04em",
-                        padding: "0.45rem 0.9rem",
-                        cursor: "pointer",
-                    }}
-                >
-                    Open Details
-                </button>
-                <button
-                    onClick={handleCopy}
-                    style={{
-                        background: "transparent",
-                        border: "1px solid var(--border)",
-                        borderRadius: "2px",
-                        color: copied ? "var(--accent)" : "var(--text-secondary)",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "0.72rem",
-                        padding: "0.45rem 0.9rem",
-                        cursor: "pointer",
-                    }}
-                >
-                    {copied ? "Copied" : "Copy Idea"}
-                </button>
+                {idea.oneLiner && (
+                    <motion.p
+                        layout="position"
+                        style={{
+                            fontSize: "1.05rem",
+                            color: "var(--text-secondary)",
+                            marginBottom: "2rem",
+                            fontFamily: "var(--font-body)",
+                            lineHeight: 1.6,
+                        }}
+                    >
+                        {idea.oneLiner}
+                    </motion.p>
+                )}
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", background: "rgba(0,0,0,0.2)", padding: "1.5rem", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.03)" }}>
+                    {[
+                        { label: "The Problem", value: idea.problem },
+                        { label: "Target Market", value: idea.targetMarket },
+                        { label: "Market Signal", value: idea.marketSignal },
+                        { label: "Monetization", value: idea.revenueModel },
+                    ]
+                        .filter((field) => field.value)
+                        .map((field) => (
+                            <div key={field.label}>
+                                <div
+                                    style={{
+                                        fontSize: "0.75rem",
+                                        fontFamily: "var(--font-body)",
+                                        color: "var(--text-muted)",
+                                        textTransform: "uppercase",
+                                        fontWeight: 600,
+                                        letterSpacing: "0.05em",
+                                        marginBottom: "0.4rem",
+                                    }}
+                                >
+                                    {field.label}
+                                </div>
+                                <div style={{ fontSize: "0.95rem", color: "var(--text-primary)", lineHeight: 1.6 }}>
+                                    {field.value}
+                                </div>
+                            </div>
+                        ))}
+                </div>
+
+                {idea.source.length > 0 && (
+                    <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--font-body)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.05em" }}>
+                            Signals Sourced From
+                        </span>
+                        <div style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                            {idea.source.slice(0, 3).map((source) => (
+                                source.startsWith("http") ? (
+                                    <a
+                                        key={source}
+                                        href={source}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ fontSize: "0.85rem", color: "var(--accent-blue)", textDecoration: "none", wordBreak: "break-all", display: "inline-flex", alignItems: "center", gap: "0.25rem", transition: "color 0.2s" }}
+                                        onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent-purple)"}
+                                        onMouseLeave={(e) => e.currentTarget.style.color = "var(--accent-blue)"}
+                                    >
+                                        <ChevronRight size={14} />
+                                        {source}
+                                    </a>
+                                ) : (
+                                    <span key={source} style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                        <ChevronRight size={14} />
+                                        {source}
+                                    </span>
+                                )
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div style={{ marginTop: "2.5rem", display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleOpenDetails}
+                        style={{
+                            background: "linear-gradient(135deg, var(--accent-blue), var(--accent-purple))",
+                            border: "none",
+                            color: "#fff",
+                            fontFamily: "var(--font-body)",
+                            fontWeight: 600,
+                            fontSize: "0.95rem",
+                            borderRadius: "99px",
+                            padding: "0.75rem 1.5rem",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            boxShadow: "0 4px 15px var(--accent-glow)",
+                            transition: "box-shadow 0.3s ease"
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.boxShadow = "0 8px 25px var(--accent-glow-strong)"}
+                        onMouseLeave={(e) => e.currentTarget.style.boxShadow = "0 4px 15px var(--accent-glow)"}
+                    >
+                        Explore Idea <ArrowRight size={16} strokeWidth={2.5} />
+                    </motion.button>
+
+                    <motion.button
+                        whileHover={{ scale: 1.02, backgroundColor: "var(--bg-glass-hover)" }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleCopy}
+                        className="glass-pill"
+                        style={{
+                            color: copied ? "var(--accent-teal)" : "var(--text-secondary)",
+                            fontFamily: "var(--font-body)",
+                            fontWeight: 500,
+                            fontSize: "0.9rem",
+                            padding: "0.75rem 1.5rem",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            transition: "all 0.3s ease"
+                        }}
+                    >
+                        {copied ? <CheckCircle2 size={16} /> : <ClipboardCopy size={16} />}
+                        {copied ? "Copied" : "Copy Details"}
+                    </motion.button>
+                </div>
             </div>
-        </div>
+        </motion.div>
     );
 }
 
 function ToolCallBadge({ execution, onClick }: { execution: ToolExecution; onClick: () => void }) {
     const isSearch = execution.name === "webSearch";
-    const label = isSearch ? `Search: "${execution.args.query}"` : `Read: ${execution.args.url?.slice(0, 30)}...`;
+    const label = isSearch ? `Searching: "${execution.args.query}"` : `Reading: ${execution.args.url?.slice(0, 35)}...`;
 
     return (
-        <button
+        <motion.button
+            layout
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            whileHover={{ scale: 1.02, backgroundColor: "var(--bg-glass-hover)", borderColor: "rgba(255,255,255,0.2)" }}
             onClick={onClick}
-            title="Click to view raw research data"
+            title="Inspect Agent Log"
+            className="glass-pill"
             style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "0.5rem",
-                padding: "0.4rem 0.75rem",
-                background: "var(--accent-dim)",
-                border: "1px solid rgba(245,166,35,0.2)",
-                borderRadius: "100px",
-                fontSize: "0.7rem",
-                fontFamily: "var(--font-mono)",
-                color: "var(--accent)",
-                width: "fit-content",
-                animation: "fadeUp 0.3s ease both",
+                padding: "0.5rem 1rem",
+                fontSize: "0.8rem",
+                fontFamily: "var(--font-body)",
+                color: "var(--text-secondary)",
                 cursor: "pointer",
-                transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--accent)";
-                e.currentTarget.style.background = "rgba(245,166,35,0.15)";
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "rgba(245,166,35,0.2)";
-                e.currentTarget.style.background = "var(--accent-dim)";
+                fontWeight: 500,
+                transition: "all 0.3s ease"
             }}
         >
-            <span style={{ width: "6px", height: "6px", background: "var(--accent)", borderRadius: "50%", display: "inline-block", animation: "pulse-ring 1.5s ease infinite" }} />
-            {label}
-            {execution.result && (
-                <span style={{ fontSize: "0.6rem", opacity: 0.7, marginLeft: "0.2rem" }}>✓</span>
+            {execution.result ? (
+                <CheckCircle2 size={14} color="var(--accent-teal)" />
+            ) : (
+                <Activity size={14} color="var(--accent-blue)" style={{ animation: "pulse-glow 2s infinite" }} />
             )}
-        </button>
+            {label}
+        </motion.button>
     );
 }
 
@@ -267,9 +284,9 @@ export default function StreamingResults({ content, ideas, isLoading, toolExecut
     const clean = stripThinkTags(content);
 
     return (
-        <div style={{ width: "100%", maxWidth: "900px", margin: "0 auto" }}>
-            {toolExecutions.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.5rem" }}>
+        <div style={{ width: "100%", maxWidth: "1000px", margin: "0 auto" }}>
+            <motion.div layout style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", marginBottom: "2.5rem", justifyContent: "center" }}>
+                <AnimatePresence>
                     {toolExecutions.map((exec) => (
                         <ToolCallBadge
                             key={exec.id}
@@ -277,51 +294,77 @@ export default function StreamingResults({ content, ideas, isLoading, toolExecut
                             onClick={() => setSelectedExecution(exec)}
                         />
                     ))}
-                </div>
-            )}
+                </AnimatePresence>
+            </motion.div>
 
-            {selectedExecution && (
-                <ToolOutputModal
-                    execution={selectedExecution}
-                    onClose={() => setSelectedExecution(null)}
-                />
-            )}
+            <AnimatePresence>
+                {selectedExecution && (
+                    <ToolOutputModal
+                        execution={selectedExecution}
+                        onClose={() => setSelectedExecution(null)}
+                    />
+                )}
+            </AnimatePresence>
 
-            {isLoading && displayIdeas.length === 0 && (
-                <div style={{ display: "grid", gap: "1rem" }}>
-                    {[0, 1, 2].map((i) => (
-                        <div key={i} style={{ height: "180px", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "3px", animation: `fadeUp 0.4s ${i * 0.08}s ease both`, overflow: "hidden", position: "relative" }}>
-                            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.02) 50%, transparent 100%)", backgroundSize: "200% 100%", animation: "shimmer 1.8s linear infinite" }} />
-                        </div>
-                    ))}
-                </div>
-            )}
+            <AnimatePresence>
+                {isLoading && displayIdeas.length === 0 && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{ display: "grid", gap: "2rem" }}
+                    >
+                        {[0, 1].map((i) => (
+                            <motion.div
+                                key={`skeleton-${i}`}
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: i * 0.1, duration: 0.5 }}
+                                className="glass-panel"
+                                style={{ height: "280px", position: "relative", overflow: "hidden" }}
+                            >
+                                <motion.div
+                                    animate={{ left: ["-100%", "200%"] }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                    style={{ position: "absolute", top: 0, left: "-100%", width: "50%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)" }}
+                                />
+                                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "var(--text-muted)", fontFamily: "var(--font-body)", fontSize: "0.9rem", fontWeight: 500, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                    <Sparkles size={16} className="animate-float" /> Synthesizing data...
+                                </div>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-            {displayIdeas.length > 0 && (
-                <div style={{ display: "grid", gap: "1rem" }}>
+            <motion.div layout style={{ display: "grid", gap: "2rem" }}>
+                <AnimatePresence>
                     {displayIdeas.map((idea, index) => (
                         <IdeaCard key={idea.id || `${idea.title}-${index}`} idea={idea} index={index} />
                     ))}
-                </div>
-            )}
+                </AnimatePresence>
+            </motion.div>
 
-            {!isLoading && displayIdeas.length === 0 && clean.length > 50 && (
-                <div style={{
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "3px",
-                    padding: "2rem",
-                    textAlign: "center",
-                    color: "var(--text-secondary)",
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "0.8rem",
-                    lineHeight: 2,
-                }}>
-                    <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>🔍</div>
-                    <div style={{ color: "var(--text-primary)", fontWeight: 600, marginBottom: "0.25rem" }}>Research complete - no structured ideas detected</div>
-                    <div>The model output format was unexpected. Re-run search or adjust your model settings.</div>
-                </div>
-            )}
+            <AnimatePresence>
+                {!isLoading && displayIdeas.length === 0 && clean.length > 50 && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="glass-panel"
+                        style={{
+                            padding: "4rem",
+                            textAlign: "center",
+                            color: "var(--text-primary)",
+                        }}
+                    >
+                        <div style={{ fontSize: "3rem", marginBottom: "1.5rem", color: "var(--accent-purple)", filter: "drop-shadow(0 0 10px rgba(147, 51, 234, 0.5))" }}>✧</div>
+                        <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "1.5rem", marginBottom: "0.75rem" }}>No clear patterns found</div>
+                        <div style={{ color: "var(--text-secondary)", fontSize: "1rem", fontFamily: "var(--font-body)", maxWidth: "400px", margin: "0 auto" }}>
+                            The AI analyzed the given input but couldn't structure it into actionable SaaS ideas. Try a broader search.
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

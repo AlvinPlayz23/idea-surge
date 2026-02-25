@@ -107,7 +107,7 @@ ${deepDiveContext}`;
             system,
             messages: mergedMessages,
             temperature: 0.6,
-            maxTokens: 900,
+            maxTokens: 3000,
         } as any);
 
         return new Response(JSON.stringify({ reply: result.text }), {

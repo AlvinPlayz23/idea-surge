@@ -1,4 +1,5 @@
 export interface AppSettings {
+    provider: string;
     baseUrl: string;
     modelId: string;
     apiKey: string;
@@ -8,6 +9,7 @@ export interface AppSettings {
 const STORAGE_KEY = "ideasurge_settings";
 
 export const DEFAULT_SETTINGS: AppSettings = {
+    provider: "openai",
     baseUrl: "https://api.openai.com/v1",
     modelId: "gpt-4o-mini",
     apiKey: "",

@@ -1,157 +1,183 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-
-const SUGGESTIONS = [
-    "SaaS for remote team management",
-    "AI tools for small businesses",
-    "Subscription software for restaurants",
-    "Niche B2B tools under $100/mo",
-    "Developer productivity tools",
-    "Automation for e-commerce sellers",
-    "SaaS for content creators",
-    "Healthcare & wellness software",
-];
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Sparkles } from "lucide-react";
 
 interface Props {
     onSearch: (query: string) => void;
     isLoading: boolean;
 }
 
+const placeholders = [
+    "AI tools for interior designers...",
+    "SaaS for freelance writers...",
+    "Automation for local bakeries...",
+    "CRM for indie game developers..."
+];
+
 export default function SearchBar({ onSearch, isLoading }: Props) {
     const [query, setQuery] = useState("");
-    const [placeholder, setPlaceholder] = useState(SUGGESTIONS[0]);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const [isFocused, setIsFocused] = useState(false);
+    const [placeholderIdx, setPlaceholderIdx] = useState(0);
 
-    useEffect(() => {
-        let i = 0;
-        const interval = setInterval(() => {
-            i = (i + 1) % SUGGESTIONS.length;
-            setPlaceholder(SUGGESTIONS[i]);
-        }, 3500);
-        return () => clearInterval(interval);
-    }, []);
-
-    const submit = () => {
-        const q = query.trim();
-        if (q && !isLoading) onSearch(q);
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (query.trim() && !isLoading) {
+            onSearch(query.trim());
+        }
     };
 
     return (
-        <div style={{ width: "100%", maxWidth: "680px", margin: "0 auto" }}>
-            <div
+        <div style={{ width: "100%", maxWidth: "700px", margin: "0 auto" }}>
+            <motion.form
+                onSubmit={handleSubmit}
+                layout
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="glass-pill"
                 style={{
+                    position: "relative",
+                    padding: "6px 6px 6px 20px",
                     display: "flex",
                     alignItems: "center",
-                    gap: 0,
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "3px",
-                    overflow: "hidden",
-                    transition: "border-color 0.3s, box-shadow 0.3s",
-                    boxShadow: "0 0 0 0 transparent",
+                    gap: "10px",
+                    transition: "all 0.3s ease",
+                    boxShadow: isFocused ? "0 8px 32px var(--accent-glow-strong)" : "0 4px 16px rgba(0,0,0,0.2)",
+                    border: isFocused ? "1px solid rgba(147, 51, 234, 0.4)" : "1px solid var(--border-glass)",
                 }}
-                onFocus={() => { }}
             >
-                {/* Search icon */}
-                <div style={{ padding: "0 1rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", flexShrink: 0 }}>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="M21 21l-4.35-4.35" />
-                    </svg>
+                <Search size={20} color={isFocused ? "var(--accent-purple)" : "var(--text-muted)"} style={{ transition: "color 0.3s" }} />
+
+                <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center" }}>
+                    <input
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
+                        disabled={isLoading}
+                        style={{
+                            background: "transparent",
+                            border: "none",
+                            color: "var(--text-primary)",
+                            fontFamily: "var(--font-body)",
+                            fontSize: "1.05rem",
+                            width: "100%",
+                            outline: "none",
+                            padding: "12px 0",
+                            zIndex: 2,
+                        }}
+                    />
+
+                    {!query && !isFocused && (
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={placeholderIdx}
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                transition={{ duration: 0.3 }}
+                                style={{
+                                    position: "absolute",
+                                    left: 0,
+                                    color: "var(--text-muted)",
+                                    pointerEvents: "none",
+                                    fontFamily: "var(--font-body)",
+                                    fontSize: "1.05rem",
+                                    zIndex: 1,
+                                }}
+                            >
+                                {placeholders[placeholderIdx]}
+                            </motion.div>
+                        </AnimatePresence>
+                    )}
                 </div>
-                <input
-                    ref={inputRef}
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && submit()}
-                    placeholder={placeholder}
-                    disabled={isLoading}
-                    style={{
-                        flex: 1,
-                        background: "none",
-                        border: "none",
-                        outline: "none",
-                        color: "var(--text-primary)",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "0.95rem",
-                        padding: "1rem 0",
-                        caretColor: "var(--accent)",
-                    }}
-                />
-                <button
-                    onClick={submit}
+
+                <motion.button
+                    type="submit"
                     disabled={isLoading || !query.trim()}
+                    whileHover={!isLoading && query.trim() ? { scale: 1.05 } : {}}
+                    whileTap={!isLoading && query.trim() ? { scale: 0.95 } : {}}
                     style={{
-                        background: isLoading ? "var(--bg)" : "var(--accent)",
+                        background: isLoading || !query.trim() ? "var(--bg-glass-heavy)" : "linear-gradient(135deg, var(--accent-blue), var(--accent-purple))",
                         border: "none",
-                        color: isLoading ? "var(--text-secondary)" : "#000",
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 700,
-                        fontSize: "0.8rem",
-                        letterSpacing: "0.05em",
-                        padding: "0.75rem 1.5rem",
+                        borderRadius: "99px",
+                        padding: "12px 24px",
+                        color: isLoading || !query.trim() ? "var(--text-muted)" : "#fff",
+                        fontFamily: "var(--font-body)",
+                        fontWeight: 600,
+                        fontSize: "0.95rem",
                         cursor: isLoading || !query.trim() ? "not-allowed" : "pointer",
-                        transition: "background 0.2s, opacity 0.2s",
                         display: "flex",
                         alignItems: "center",
-                        gap: "0.5rem",
-                        whiteSpace: "nowrap",
-                        opacity: !query.trim() ? 0.5 : 1,
+                        gap: "8px",
+                        boxShadow: isLoading || !query.trim() ? "none" : "0 4px 12px var(--accent-glow)",
+                        transition: "all 0.3s ease"
                     }}
                 >
                     {isLoading ? (
                         <>
-                            <span
-                                style={{
-                                    width: "12px",
-                                    height: "12px",
-                                    border: "2px solid var(--text-muted)",
-                                    borderTopColor: "var(--accent)",
-                                    borderRadius: "50%",
-                                    display: "inline-block",
-                                    animation: "spin-slow 0.8s linear infinite",
-                                }}
-                            />
-                            Searching…
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                style={{ display: "flex" }}
+                            >
+                                <Sparkles size={16} />
+                            </motion.div>
+                            Scanning
                         </>
                     ) : (
-                        "Discover →"
+                        "Discover"
                     )}
-                </button>
-            </div>
-            {/* Suggestions chips */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.75rem", justifyContent: "center" }}>
-                {SUGGESTIONS.slice(0, 4).map((s) => (
-                    <button
+                </motion.button>
+            </motion.form>
+
+            <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={{
+                    visible: { transition: { staggerChildren: 0.05 } },
+                    hidden: {}
+                }}
+                style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "10px",
+                    marginTop: "1.5rem",
+                    justifyContent: "center"
+                }}
+            >
+                {["Knowledge base for Notion", "Automation for plant care", "CRM for Twitch streamers"].map((s) => (
+                    <motion.button
                         key={s}
-                        onClick={() => { setQuery(s); inputRef.current?.focus(); }}
-                        disabled={isLoading}
+                        variants={{
+                            hidden: { opacity: 0, y: 10 },
+                            visible: { opacity: 1, y: 0 }
+                        }}
+                        whileHover={{ scale: 1.03, backgroundColor: "var(--bg-glass-hover)" }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => {
+                            setQuery(s);
+                            setIsFocused(true);
+                        }}
+                        className="glass-pill"
                         style={{
-                            background: "none",
-                            border: "1px solid var(--border)",
-                            borderRadius: "100px",
+                            padding: "6px 14px",
+                            fontSize: "0.85rem",
+                            fontFamily: "var(--font-body)",
                             color: "var(--text-secondary)",
-                            fontFamily: "var(--font-mono)",
-                            fontSize: "0.7rem",
-                            padding: "0.25rem 0.65rem",
                             cursor: "pointer",
-                            transition: "border-color 0.2s, color 0.2s",
+                            transition: "color 0.2s ease"
                         }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = "var(--accent)";
-                            e.currentTarget.style.color = "var(--accent)";
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = "var(--border)";
-                            e.currentTarget.style.color = "var(--text-secondary)";
-                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = "var(--text-primary)"}
+                        onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-secondary)"}
                     >
                         {s}
-                    </button>
+                    </motion.button>
                 ))}
-            </div>
+            </motion.div>
         </div>
     );
 }

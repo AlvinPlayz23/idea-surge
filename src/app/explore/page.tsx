@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Bookmark, ChevronLeft } from "lucide-react";
+import { Compass, ChevronLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function LibraryPage() {
-    const pickedIdeas = await prisma.ideaRecord.findMany({
-        where: { status: "PICKED" },
-        orderBy: [{ pickedAt: "desc" }, { createdAt: "desc" }],
+export default async function ExplorePage() {
+    const recycledIdeas = await prisma.ideaRecord.findMany({
+        where: { status: "RECYCLED" },
+        orderBy: [{ recycledAt: "desc" }, { createdAt: "desc" }],
     });
 
-    const grouped = pickedIdeas.reduce<Record<string, typeof pickedIdeas>>((acc, item) => {
+    const grouped = recycledIdeas.reduce<Record<string, typeof recycledIdeas>>((acc, item) => {
         const key = item.category || "Uncategorized";
         if (!acc[key]) acc[key] = [];
         acc[key].push(item);
@@ -22,17 +22,17 @@ export default async function LibraryPage() {
     return (
         <main style={{ minHeight: "100vh", padding: "2rem 1.5rem 4rem", maxWidth: "1000px", margin: "0 auto", position: "relative" }}>
             <div className="mesh-bg">
-                <div className="mesh-blob blob-1" />
+                <div className="mesh-blob blob-1" style={{ background: "rgba(16, 185, 129, 0.15)" }} />
             </div>
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", marginBottom: "2rem", flexWrap: "wrap", position: "relative", zIndex: 10 }}>
                 <div>
                     <h1 style={{ fontFamily: "var(--font-display)", fontSize: "2.5rem", letterSpacing: "-0.02em", marginBottom: "0.3rem", color: "var(--text-primary)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                        <Bookmark className="text-gradient-accent" size={32} />
-                        Your Picked Ideas
+                        <Compass className="text-gradient-accent" size={32} color="var(--accent-teal)" />
+                        Explore Recycled Ideas
                     </h1>
                     <p style={{ color: "var(--text-secondary)", fontSize: "1.05rem" }}>
-                        Ideas you've explicitly saved to explore further.
+                        Discover ideas that others searched for but didn't pick.
                     </p>
                 </div>
                 <Link
@@ -50,15 +50,15 @@ export default async function LibraryPage() {
 
             {categories.length === 0 ? (
                 <section className="glass-panel" style={{ padding: "4rem 2rem", textAlign: "center", color: "var(--text-secondary)", position: "relative", zIndex: 10 }}>
-                    <Bookmark size={48} color="var(--border-glass-strong)" style={{ margin: "0 auto 1rem", opacity: 0.5 }} />
-                    <p style={{ fontSize: "1.1rem" }}>No picked ideas yet.</p>
-                    <p style={{ fontSize: "0.95rem", opacity: 0.7, marginTop: "0.5rem" }}>Search for ideas on the home page and pick them to save them here.</p>
+                    <Compass size={48} color="var(--border-glass-strong)" style={{ margin: "0 auto 1rem", opacity: 0.5 }} />
+                    <p style={{ fontSize: "1.1rem" }}>No recycled ideas yet.</p>
+                    <p style={{ fontSize: "0.95rem", opacity: 0.7, marginTop: "0.5rem" }}>As people search for ideas, the ones they discard will appear here.</p>
                 </section>
             ) : (
                 <div style={{ display: "grid", gap: "2rem", position: "relative", zIndex: 10 }}>
                     {categories.map(([category, items]) => (
                         <section key={category}>
-                            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(20, 184, 166, 0.1)", border: "1px solid rgba(20, 184, 166, 0.2)", color: "var(--accent-teal)", fontWeight: 600, borderRadius: "99px", padding: "0.4rem 1rem", marginBottom: "1rem", fontSize: "0.85rem" }}>
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.2)", color: "var(--accent-teal)", fontWeight: 600, borderRadius: "99px", padding: "0.4rem 1rem", marginBottom: "1rem", fontSize: "0.85rem" }}>
                                 {category} <span style={{ opacity: 0.7, fontWeight: 400 }}>{items.length}</span>
                             </div>
 
