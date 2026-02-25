@@ -10,7 +10,7 @@ export default async function ExplorePage() {
         orderBy: [{ recycledAt: "desc" }, { createdAt: "desc" }],
     });
 
-    const grouped = recycledIdeas.reduce<Record<string, typeof recycledIdeas>>((acc, item) => {
+    const grouped = recycledIdeas.reduce<Record<string, typeof recycledIdeas>>((acc: Record<string, typeof recycledIdeas>, item) => {
         const key = item.category || "Uncategorized";
         if (!acc[key]) acc[key] = [];
         acc[key].push(item);
