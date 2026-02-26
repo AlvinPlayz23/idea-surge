@@ -18,7 +18,7 @@ export default function SettingsModal({ onClose }: Props) {
         baseUrl: "",
         modelId: "",
         apiKey: "",
-        tavilyApiKey: "",
+        exaApiKey: "",
         theme: "liquid-obsidian",
     });
     const [isSaving, setIsSaving] = useState(false);
@@ -100,8 +100,8 @@ export default function SettingsModal({ onClose }: Props) {
                             key={item.id}
                             onClick={() => setActiveSection(item.id as Section)}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${activeSection === item.id
-                                    ? "bg-[var(--bg-glass-hover)] text-[var(--text-primary)] shadow-sm"
-                                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.04)]"
+                                ? "bg-[var(--bg-glass-hover)] text-[var(--text-primary)] shadow-sm"
+                                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.04)]"
                                 }`}
                         >
                             <item.icon size={16} />
@@ -193,16 +193,23 @@ export default function SettingsModal({ onClose }: Props) {
                                         </div>
 
                                         <div className="pt-4 border-t border-[var(--border-glass)]">
-                                            <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1">Web Research</h4>
-                                            <p className="text-xs text-[var(--text-muted)] mb-3">Tavily Search API key for deep market crawling.</p>
+                                            <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
+                                                Web Research
+                                                <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-teal)] bg-[var(--accent-teal)]/10 px-2 py-0.5 rounded-full border border-[var(--accent-teal)]/20">Free · No key needed</span>
+                                            </h4>
+                                            <p className="text-xs text-[var(--text-muted)] mb-3">
+                                                Powered by <strong className="text-[var(--text-secondary)]">Exa MCP</strong> — works out of the box with no API key.
+                                                Add a key for higher rate limits.{" "}
+                                                <a href="https://dashboard.exa.ai/api-keys" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-teal)] hover:underline">Get key ↗</a>
+                                            </p>
                                             <div className="relative">
                                                 <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={14} />
                                                 <input
                                                     type="password"
-                                                    name="tavilyApiKey"
-                                                    value={config.tavilyApiKey}
+                                                    name="exaApiKey"
+                                                    value={config.exaApiKey}
                                                     onChange={handleChange}
-                                                    placeholder="tvly-..."
+                                                    placeholder="exa_... (optional)"
                                                     className="w-full bg-[var(--bg-input)] border border-[var(--border-glass)] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-teal)] transition-colors"
                                                 />
                                             </div>
@@ -221,8 +228,8 @@ export default function SettingsModal({ onClose }: Props) {
                                                         key={t.id}
                                                         onClick={() => handleThemeSelect(t.id)}
                                                         className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${config.theme === t.id
-                                                                ? "bg-[var(--bg-glass-hover)] border-[var(--accent-blue)] shadow-lg"
-                                                                : "bg-[var(--bg-input)] border-[var(--border-glass)] hover:bg-[rgba(255,255,255,0.03)]"
+                                                            ? "bg-[var(--bg-glass-hover)] border-[var(--accent-blue)] shadow-lg"
+                                                            : "bg-[var(--bg-input)] border-[var(--border-glass)] hover:bg-[rgba(255,255,255,0.03)]"
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-3">

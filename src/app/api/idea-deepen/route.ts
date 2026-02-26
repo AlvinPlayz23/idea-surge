@@ -5,55 +5,55 @@ import { z } from "zod";
 export const runtime = "edge";
 export const maxDuration = 60;
 
-async function webSearch(query: string, apiKey: string): Promise<string> {
-    try {
-        const res = await fetch("https://api.tavily.com/search", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                api_key: apiKey,
-                query,
-                search_depth: "advanced",
-                include_answer: "basic",
-            }),
-            signal: AbortSignal.timeout(20000),
-        });
-        if (res.ok) {
-            const data = await res.json();
-            const results = (data.results || [])
-                .map((r: any) => `Title: ${r.title}\nURL: ${r.url}\nContent: ${r.content}`)
-                .join("\n\n");
-            const answer = data.answer ? `\n\nSummary Answer: ${data.answer}` : "";
-            return (results + answer).slice(0, 12000) || "No results found.";
-        }
-    } catch {
-        // fallthrough
-    }
-    return "Search unavailable.";
-}
+// Call Exa MCP via JSON-RPC POST
+async function callExaMcp(
+    toolName: string,
+    args: Record<string, unknown>,
+    exaApiKey: string | undefined,
+): Promise<string> {
+    const url = exaApiKey
+        ? `https://mcp.exa.ai/mcp?tools=web_search_exa,crawling_exa&exaApiKey=${exaApiKey}`
+        : "https://mcp.exa.ai/mcp?tools=web_search_exa,crawling_exa";
 
-async function readPage(url: string, apiKey: string): Promise<string> {
-    try {
-        const res = await fetch("https://api.tavily.com/extract", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                api_key: apiKey,
-                urls: [url],
-                extract_depth: "advanced",
-            }),
-            signal: AbortSignal.timeout(20000),
-        });
-        if (res.ok) {
-            const data = await res.json();
-            const content = data.results?.[0]?.content;
-            if (content && content.length > 80) return content.slice(0, 15000);
-            return `Page blocked or inaccessible: ${url}`;
-        }
-    } catch {
-        // fallthrough
+    const res = await fetch(url, {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            accept: "application/json, text/event-stream",
+        },
+        body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params: { name: toolName, arguments: args },
+        }),
+        signal: AbortSignal.timeout(25000),
+    });
+
+    if (!res.ok) {
+        const text = await res.text().catch(() => res.statusText);
+        throw new Error(`Exa MCP error (${res.status}): ${text}`);
     }
-    return `Extraction unavailable for URL: ${url}`;
+
+    const responseText = await res.text();
+
+    for (const line of responseText.split("\n")) {
+        if (line.startsWith("data: ")) {
+            try {
+                const data = JSON.parse(line.slice(6));
+                const text = data?.result?.content?.[0]?.text;
+                if (text) return text;
+            } catch { /* continue */ }
+        }
+    }
+
+    try {
+        const data = JSON.parse(responseText);
+        const text = data?.result?.content?.[0]?.text;
+        if (text) return text;
+    } catch { /* ignore */ }
+
+    return "No results returned.";
 }
 
 export async function POST(req: Request) {
@@ -76,10 +76,10 @@ export async function POST(req: Request) {
                 focus: "market" | "mvp" | "risks" | "pricing" | "custom";
                 prompt?: string;
             };
-            settings: { baseUrl: string; modelId: string; apiKey: string; tavilyApiKey: string };
+            settings: { baseUrl: string; modelId: string; apiKey: string; exaApiKey?: string };
         };
 
-        const tavilyKey = settings?.tavilyApiKey || process.env.TAVILY_API_KEY;
+        const exaKey = settings?.exaApiKey?.trim() || process.env.EXA_API_KEY;
 
         if (!idea?.id || !deepDiveRequest?.ideaId) {
             return new Response(JSON.stringify({ error: "Invalid request payload." }), {
@@ -90,13 +90,6 @@ export async function POST(req: Request) {
 
         if (!settings?.apiKey) {
             return new Response(JSON.stringify({ error: "LLM API key not configured." }), {
-                status: 400,
-                headers: { "Content-Type": "application/json" },
-            });
-        }
-
-        if (!tavilyKey) {
-            return new Response(JSON.stringify({ error: "Tavily API key not configured." }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" },
             });
@@ -129,7 +122,7 @@ Return exactly:
 }
 
 Rules:
-- Use webSearch, then readPage for at least 2 high-signal sources.
+- Use web_search_exa, then crawling_exa for at least 2 high-signal sources.
 - Be concrete and implementation-ready.
 - Tailor depth to the requested focus.
 - sources should include 3 to 8 URLs/source identifiers.`;
@@ -148,23 +141,29 @@ Known sources: ${(idea.source || []).join(", ")}
 
 ${focusInstruction}`,
             tools: {
-                webSearch: tool({
-                    description: "Search for high-signal validation data, competitors, user pain, and trends",
+                web_search_exa: tool({
+                    description: "Search for high-signal validation data, competitors, user pain points, and trends",
                     parameters: z.object({
                         query: z.string().describe("Search query"),
+                        numResults: z.number().optional(),
+                        livecrawl: z.enum(["fallback", "preferred"]).optional(),
                     }),
-                    execute: async ({ query }: { query: string }) => {
-                        const results = await webSearch(query, tavilyKey);
+                    execute: async ({ query, numResults = 8, livecrawl = "fallback" }: { query: string; numResults?: number; livecrawl?: "fallback" | "preferred" }) => {
+                        const results = await callExaMcp(
+                            "web_search_exa",
+                            { query, numResults, livecrawl, type: "auto" },
+                            exaKey
+                        );
                         return { results };
                     },
                 } as any),
-                readPage: tool({
-                    description: "Read a URL deeply for concrete evidence",
+                crawling_exa: tool({
+                    description: "Read a URL deeply for concrete evidence, pricing data, or competitor analysis",
                     parameters: z.object({
-                        url: z.string().describe("URL to inspect"),
+                        url: z.string().describe("URL to read"),
                     }),
                     execute: async ({ url }: { url: string }) => {
-                        const content = await readPage(url, tavilyKey);
+                        const content = await callExaMcp("crawling_exa", { url }, exaKey);
                         return { content };
                     },
                 } as any),

@@ -350,17 +350,17 @@ export default function Home() {
                             className="hero-element"
                             style={{
                                 fontFamily: "var(--font-display)",
-                                fontSize: hasSearched ? "clamp(1.8rem, 5vw, 2.5rem)" : "clamp(2.5rem, 8vw, 4.5rem)",
-                                fontWeight: 600,
+                                fontSize: hasSearched ? "clamp(2rem, 5.5vw, 2.8rem)" : "clamp(3.5rem, 10vw, 5.5rem)",
+                                fontWeight: 300,
                                 lineHeight: 1.1,
-                                letterSpacing: "-0.03em",
+                                letterSpacing: "-0.04em",
                                 color: "var(--text-primary)",
                                 marginBottom: hasSearched ? "1rem" : "1.5rem",
                                 willChange: "transform"
                             }}
                         >
                             The intelligent way to <br />
-                            <span className="text-gradient-accent">find your next product</span>
+                            <span style={{ fontWeight: 700, background: "linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-teal))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>find your next product</span>
                         </h1>
 
                         <AnimatePresence>
@@ -371,12 +371,13 @@ export default function Home() {
                                     exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                                     className="hero-element"
                                     style={{
-                                        fontSize: "1.05rem",
+                                        fontSize: "1.15rem",
                                         fontFamily: "var(--font-body)",
                                         color: "var(--text-secondary)",
-                                        maxWidth: "500px",
+                                        maxWidth: "550px",
                                         margin: "0 auto 3rem",
                                         lineHeight: 1.6,
+                                        fontWeight: 300,
                                         overflow: "hidden"
                                     }}
                                 >

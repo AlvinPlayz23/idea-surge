@@ -36,16 +36,19 @@ export default function SearchBar({ onSearch, isLoading }: Props) {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="glass-pill"
+                className=""
                 style={{
                     position: "relative",
-                    padding: "6px 6px 6px 20px",
+                    padding: "8px 8px 8px 24px",
                     display: "flex",
                     alignItems: "center",
-                    gap: "10px",
-                    transition: "all 0.3s ease",
-                    boxShadow: isFocused ? "0 8px 32px var(--accent-glow-strong)" : "0 4px 16px rgba(0,0,0,0.2)",
-                    border: isFocused ? "1px solid var(--accent-purple)" : "1px solid var(--border-glass)",
+                    gap: "12px",
+                    transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                    boxShadow: isFocused ? "0 8px 40px rgba(147, 51, 234, 0.2)" : "0 10px 30px rgba(0,0,0,0.5)",
+                    border: isFocused ? "1px solid var(--accent-purple)" : "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: "999px",
+                    background: isFocused ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.02)",
+                    backdropFilter: "blur(20px)",
                 }}
             >
                 <Search size={20} color={isFocused ? "var(--accent-purple)" : "var(--text-muted)"} style={{ transition: "color 0.3s" }} />
@@ -101,20 +104,33 @@ export default function SearchBar({ onSearch, isLoading }: Props) {
                     whileHover={!isLoading && query.trim() ? { scale: 1.05 } : {}}
                     whileTap={!isLoading && query.trim() ? { scale: 0.95 } : {}}
                     style={{
-                        background: isLoading || !query.trim() ? "var(--bg-glass-heavy)" : "linear-gradient(135deg, var(--accent-blue), var(--accent-purple))",
-                        border: "none",
+                        background: isLoading || !query.trim() ? "transparent" : "var(--text-primary)",
+                        border: isLoading || !query.trim() ? "1px solid rgba(255,255,255,0.1)" : "1px solid var(--text-primary)",
                         borderRadius: "99px",
-                        padding: "12px 24px",
-                        color: isLoading || !query.trim() ? "var(--text-muted)" : "#fff",
-                        fontFamily: "var(--font-body)",
+                        padding: "14px 28px",
+                        color: isLoading || !query.trim() ? "var(--text-muted)" : "var(--bg-base)",
+                        fontFamily: "var(--font-display)",
                         fontWeight: 600,
                         fontSize: "0.95rem",
+                        letterSpacing: "0.02em",
                         cursor: isLoading || !query.trim() ? "not-allowed" : "pointer",
                         display: "flex",
                         alignItems: "center",
                         gap: "8px",
-                        boxShadow: isLoading || !query.trim() ? "none" : "0 4px 12px var(--accent-glow)",
-                        transition: "all 0.3s ease"
+                        boxShadow: isLoading || !query.trim() ? "none" : "0 4px 12px rgba(255,255,255,0.15)",
+                        transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)"
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!isLoading && query.trim()) {
+                            e.currentTarget.style.background = "#fff";
+                            e.currentTarget.style.boxShadow = "0 8px 30px rgba(255,255,255,0.3)";
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!isLoading && query.trim()) {
+                            e.currentTarget.style.background = "var(--text-primary)";
+                            e.currentTarget.style.boxShadow = "0 4px 12px rgba(255,255,255,0.15)";
+                        }
                     }}
                 >
                     {isLoading ? (
@@ -162,17 +178,20 @@ export default function SearchBar({ onSearch, isLoading }: Props) {
                             setQuery(s);
                             setIsFocused(true);
                         }}
-                        className="glass-pill"
+                        className=""
                         style={{
                             padding: "6px 14px",
                             fontSize: "0.85rem",
                             fontFamily: "var(--font-body)",
-                            color: "var(--text-secondary)",
+                            color: "var(--text-muted)",
                             cursor: "pointer",
-                            transition: "color 0.2s ease"
+                            transition: "all 0.3s ease",
+                            background: "transparent",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: "99px"
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = "var(--text-primary)"}
-                        onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-secondary)"}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}
                     >
                         {s}
                     </motion.button>

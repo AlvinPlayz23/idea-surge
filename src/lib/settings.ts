@@ -3,7 +3,7 @@ export interface AppSettings {
     baseUrl: string;
     modelId: string;
     apiKey: string;
-    tavilyApiKey: string;
+    exaApiKey: string; // optional — Exa MCP works without a key (free tier)
     theme: string;
 }
 
@@ -14,7 +14,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     baseUrl: "https://api.openai.com/v1",
     modelId: "gpt-4o-mini",
     apiKey: "",
-    tavilyApiKey: "",
+    exaApiKey: "",
     theme: "liquid-obsidian",
 };
 
@@ -23,7 +23,10 @@ export function getSettings(): AppSettings {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return DEFAULT_SETTINGS;
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+        const parsed = JSON.parse(raw);
+        // Drop legacy tavilyApiKey if present
+        const { tavilyApiKey: _tavily, ...rest } = parsed;
+        return { ...DEFAULT_SETTINGS, ...rest };
     } catch {
         return DEFAULT_SETTINGS;
     }
