@@ -181,7 +181,7 @@ export default function BrainstormPage() {
     return (
         <main style={{ padding: "2rem 1.5rem 4rem", maxWidth: "1000px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.5rem", height: "100vh", position: "relative" }}>
             <div className="mesh-bg">
-                <div className="mesh-blob blob-2" style={{ background: "rgba(147, 51, 234, 0.1)" }} />
+                <div className="mesh-blob blob-2" style={{ background: "var(--accent-glow-alpha)" }} />
             </div>
 
             <motion.nav
@@ -265,8 +265,8 @@ export default function BrainstormPage() {
                                 style={{
                                     alignSelf: message.role === "user" ? "flex-end" : "flex-start",
                                     maxWidth: "85%",
-                                    background: message.role === "user" ? "rgba(79, 70, 229, 0.15)" : "transparent",
-                                    border: message.role === "user" ? "1px solid rgba(79, 70, 229, 0.3)" : "none",
+                                    background: message.role === "user" ? "var(--accent-glow-alpha)" : "transparent",
+                                    border: message.role === "user" ? "1px solid var(--accent-glow-strong)" : "none",
                                     borderRadius: "16px",
                                     padding: message.role === "user" ? "1rem 1.25rem" : "0.5rem 0",
                                 }}

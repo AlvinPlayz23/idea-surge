@@ -248,7 +248,7 @@ export default function IdeaDetailPage() {
                 className="glass-panel"
                 style={{ padding: "2.5rem", position: "relative", zIndex: 1 }}
             >
-                <div style={{ position: "absolute", top: 0, right: 0, width: "200px", height: "200px", background: "radial-gradient(circle, rgba(79, 70, 229, 0.1), transparent 70%)", filter: "blur(40px)", pointerEvents: "none", zIndex: 0 }} />
+                <div style={{ position: "absolute", top: 0, right: 0, width: "200px", height: "200px", background: "radial-gradient(circle, var(--accent-glow-alpha), transparent 70%)", filter: "blur(40px)", pointerEvents: "none", zIndex: 0 }} />
 
                 <div style={{ position: "relative", zIndex: 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem", flexWrap: "wrap", gap: "1rem" }}>
@@ -256,7 +256,7 @@ export default function IdeaDetailPage() {
                             {idea.title}
                         </h1>
                         {idea.category && (
-                            <div className="glass-pill" style={{ padding: "0.4rem 1rem", color: "var(--accent-teal)", background: "rgba(20, 184, 166, 0.05)", border: "1px solid rgba(20, 184, 166, 0.2)", fontSize: "0.8rem", fontWeight: 600 }}>
+                            <div className="glass-pill" style={{ padding: "0.4rem 1rem", color: "var(--accent-teal)", background: "var(--accent-glow-alpha-3)", border: "1px solid var(--accent-glow-alpha-3)", fontSize: "0.8rem", fontWeight: 600 }}>
                                 {idea.category}
                             </div>
                         )}
@@ -309,8 +309,8 @@ export default function IdeaDetailPage() {
                                 gap: "0.5rem",
                                 padding: "0.6rem 1.25rem",
                                 color: activeFocus === preset.focus ? "var(--text-primary)" : "var(--text-secondary)",
-                                background: activeFocus === preset.focus ? "rgba(147, 51, 234, 0.15)" : "var(--bg-glass)",
-                                border: activeFocus === preset.focus ? "1px solid rgba(147, 51, 234, 0.4)" : "1px solid var(--border-glass)",
+                                background: activeFocus === preset.focus ? "var(--accent-glow-alpha)" : "var(--bg-glass)",
+                                border: activeFocus === preset.focus ? "1px solid var(--accent-glow-strong)" : "1px solid var(--border-glass)",
                                 fontSize: "0.85rem",
                                 cursor: isLoading ? "not-allowed" : "pointer",
                                 transition: "all 0.2s ease",
@@ -424,7 +424,7 @@ export default function IdeaDetailPage() {
                         className="glass-panel"
                         style={{ padding: "2.5rem", position: "relative" }}
                     >
-                        <div style={{ position: "absolute", top: 0, left: 0, width: "150px", height: "150px", background: "radial-gradient(circle, rgba(20, 184, 166, 0.1), transparent 70%)", filter: "blur(40px)", pointerEvents: "none", zIndex: 0 }} />
+                        <div style={{ position: "absolute", top: 0, left: 0, width: "150px", height: "150px", background: "radial-gradient(circle, var(--accent-glow-alpha-3), transparent 70%)", filter: "blur(40px)", pointerEvents: "none", zIndex: 0 }} />
 
                         <div style={{ position: "relative", zIndex: 1 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>

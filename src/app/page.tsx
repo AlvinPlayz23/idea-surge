@@ -345,22 +345,6 @@ export default function Home() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
                     >
-                        <div
-                            className="hero-element glass-pill"
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "0.5rem",
-                                padding: "0.4rem 1.2rem",
-                                marginBottom: "2rem",
-                                boxShadow: "0 0 20px var(--accent-glow)",
-                            }}
-                        >
-                            <Sparkles size={14} color="var(--accent-purple)" className="animate-float" style={{ animationDuration: "3s" }} />
-                            <span style={{ fontSize: "0.8rem", fontFamily: "var(--font-body)", color: "var(--text-primary)", fontWeight: 500 }}>
-                                Discover validated SaaS ideas
-                            </span>
-                        </div>
 
                         <h1
                             className="hero-element"
@@ -372,7 +356,7 @@ export default function Home() {
                                 letterSpacing: "-0.03em",
                                 color: "var(--text-primary)",
                                 marginBottom: hasSearched ? "1rem" : "1.5rem",
-                                transition: "all 0.6s cubic-bezier(0.16, 1, 0.3, 1)"
+                                willChange: "transform"
                             }}
                         >
                             The intelligent way to <br />
@@ -461,8 +445,8 @@ export default function Home() {
                 <AnimatePresence>
                     {hasSearched && (
                         <motion.section
-                            initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
-                            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
                             style={{ padding: "0 2rem 4rem" }}
                         >

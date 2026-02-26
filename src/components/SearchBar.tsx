@@ -45,7 +45,7 @@ export default function SearchBar({ onSearch, isLoading }: Props) {
                     gap: "10px",
                     transition: "all 0.3s ease",
                     boxShadow: isFocused ? "0 8px 32px var(--accent-glow-strong)" : "0 4px 16px rgba(0,0,0,0.2)",
-                    border: isFocused ? "1px solid rgba(147, 51, 234, 0.4)" : "1px solid var(--border-glass)",
+                    border: isFocused ? "1px solid var(--accent-purple)" : "1px solid var(--border-glass)",
                 }}
             >
                 <Search size={20} color={isFocused ? "var(--accent-purple)" : "var(--text-muted)"} style={{ transition: "color 0.3s" }} />

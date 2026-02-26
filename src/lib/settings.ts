@@ -4,6 +4,7 @@ export interface AppSettings {
     modelId: string;
     apiKey: string;
     tavilyApiKey: string;
+    theme: string;
 }
 
 const STORAGE_KEY = "ideasurge_settings";
@@ -14,6 +15,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     modelId: "gpt-4o-mini",
     apiKey: "",
     tavilyApiKey: "",
+    theme: "liquid-obsidian",
 };
 
 export function getSettings(): AppSettings {

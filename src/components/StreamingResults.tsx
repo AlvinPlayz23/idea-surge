@@ -81,7 +81,7 @@ function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
                 position: "absolute",
                 top: 0, right: 0,
                 width: "150px", height: "150px",
-                background: "radial-gradient(circle, rgba(147, 51, 234, 0.15), transparent 70%)",
+                background: "radial-gradient(circle, var(--accent-glow-alpha), transparent 70%)",
                 filter: "blur(30px)",
                 zIndex: 0,
                 pointerEvents: "none"
@@ -105,7 +105,7 @@ function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
                     </motion.h3>
 
                     {idea.category && (
-                        <div className="glass-pill" style={{ padding: "0.3rem 0.8rem", color: "var(--accent-teal)", fontSize: "0.75rem", fontWeight: 600, border: "1px solid rgba(20, 184, 166, 0.2)", background: "rgba(20, 184, 166, 0.05)" }}>
+                        <div className="glass-pill" style={{ padding: "0.3rem 0.8rem", color: "var(--accent-teal)", fontSize: "0.75rem", fontWeight: 600, border: "1px solid var(--accent-glow-alpha-3)", background: "var(--accent-glow-alpha-3)" }}>
                             {idea.category}
                         </div>
                     )}
@@ -357,7 +357,7 @@ export default function StreamingResults({ content, ideas, isLoading, toolExecut
                             color: "var(--text-primary)",
                         }}
                     >
-                        <div style={{ fontSize: "3rem", marginBottom: "1.5rem", color: "var(--accent-purple)", filter: "drop-shadow(0 0 10px rgba(147, 51, 234, 0.5))" }}>✧</div>
+                        <div style={{ fontSize: "3rem", marginBottom: "1.5rem", color: "var(--accent-purple)", filter: "drop-shadow(0 0 10px var(--accent-glow-strong))" }}>✧</div>
                         <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "1.5rem", marginBottom: "0.75rem" }}>No clear patterns found</div>
                         <div style={{ color: "var(--text-secondary)", fontSize: "1rem", fontFamily: "var(--font-body)", maxWidth: "400px", margin: "0 auto" }}>
                             The AI analyzed the given input but couldn't structure it into actionable SaaS ideas. Try a broader search.

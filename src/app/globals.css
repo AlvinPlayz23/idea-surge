@@ -3,31 +3,85 @@
 @tailwind utilities;
 
 :root {
-  /* LIQUID OBSIDIAN THEME */
+  /* LIQUID OBSIDIAN THEME (DEFAULT) */
   --bg-base: #050507;
   --bg-glass: rgba(15, 15, 20, 0.4);
   --bg-glass-heavy: rgba(10, 10, 15, 0.7);
   --bg-glass-hover: rgba(25, 25, 35, 0.5);
-
   --bg-card: rgba(20, 20, 25, 0.35);
   --bg-input: rgba(10, 10, 15, 0.6);
-
   --border-glass: rgba(255, 255, 255, 0.08);
   --border-glass-strong: rgba(255, 255, 255, 0.15);
-
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.6);
   --text-muted: rgba(255, 255, 255, 0.4);
-
   --accent-blue: #4F46E5;
   --accent-purple: #9333EA;
   --accent-teal: #14B8A6;
-
   --accent-glow: rgba(79, 70, 229, 0.2);
   --accent-glow-strong: rgba(147, 51, 234, 0.3);
-
+  --accent-glow-alpha: rgba(79, 70, 229, 0.06);
+  --accent-glow-alpha-2: rgba(147, 51, 234, 0.06);
+  --accent-glow-alpha-3: rgba(20, 184, 166, 0.05);
   --font-display: 'Outfit', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
+}
+
+[data-theme="aurora-teal"] {
+  --bg-base: #020d0c;
+  --bg-glass: rgba(10, 30, 28, 0.4);
+  --accent-blue: #0ea5e9;
+  --accent-purple: #14b8a6;
+  --accent-teal: #2dd4bf;
+  --accent-glow: rgba(14, 165, 233, 0.2);
+  --accent-glow-alpha: rgba(14, 165, 233, 0.06);
+  --accent-glow-alpha-2: rgba(20, 184, 166, 0.06);
+  --accent-glow-alpha-3: rgba(45, 212, 191, 0.05);
+}
+
+[data-theme="solar-flare"] {
+  --bg-base: #0d0602;
+  --bg-glass: rgba(30, 15, 10, 0.4);
+  --accent-blue: #f97316;
+  --accent-purple: #ef4444;
+  --accent-teal: #facc15;
+  --accent-glow: rgba(249, 115, 22, 0.2);
+  --accent-glow-alpha: rgba(249, 115, 22, 0.06);
+  --accent-glow-alpha-2: rgba(239, 68, 68, 0.06);
+  --accent-glow-alpha-3: rgba(250, 204, 21, 0.05);
+}
+
+[data-theme="frost"] {
+  --bg-base: #f8fafc;
+  --bg-glass: rgba(255, 255, 255, 0.5);
+  --bg-glass-heavy: rgba(255, 255, 255, 0.8);
+  --bg-glass-hover: rgba(241, 245, 249, 0.6);
+  --bg-card: rgba(255, 255, 255, 0.4);
+  --bg-input: rgba(255, 255, 255, 0.7);
+  --border-glass: rgba(0, 0, 0, 0.08);
+  --border-glass-strong: rgba(0, 0, 0, 0.12);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-teal: #06b6d4;
+  --accent-glow: rgba(59, 130, 246, 0.1);
+  --accent-glow-alpha: rgba(59, 130, 246, 0.03);
+  --accent-glow-alpha-2: rgba(139, 92, 246, 0.03);
+  --accent-glow-alpha-3: rgba(6, 182, 212, 0.03);
+}
+
+[data-theme="midnight-purple"] {
+  --bg-base: #0a0118;
+  --bg-glass: rgba(20, 5, 40, 0.4);
+  --accent-blue: #7c3aed;
+  --accent-purple: #d946ef;
+  --accent-teal: #8b5cf6;
+  --accent-glow: rgba(124, 58, 237, 0.2);
+  --accent-glow-alpha: rgba(124, 58, 237, 0.06);
+  --accent-glow-alpha-2: rgba(217, 70, 239, 0.06);
+  --accent-glow-alpha-3: rgba(139, 92, 246, 0.05);
 }
 
 * {
@@ -45,9 +99,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   background-image:
-    radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.06), transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(147, 51, 234, 0.06), transparent 50%),
-    radial-gradient(circle at 50% 100%, rgba(20, 184, 166, 0.05), transparent 50%);
+    radial-gradient(circle at 15% 50%, var(--accent-glow-alpha), transparent 50%),
+    radial-gradient(circle at 85% 30%, var(--accent-glow-alpha-2), transparent 50%),
+    radial-gradient(circle at 50% 100%, var(--accent-glow-alpha-3), transparent 50%);
   background-attachment: fixed;
 }
 
@@ -100,7 +154,7 @@ body {
 }
 
 .text-gradient-accent {
-  background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-blue) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -162,7 +216,7 @@ body {
   left: -10%;
   width: 50vw;
   height: 50vw;
-  background: rgba(79, 70, 229, 0.15);
+  background: var(--accent-glow);
   animation-delay: 0s;
 }
 
@@ -171,6 +225,6 @@ body {
   right: -10%;
   width: 40vw;
   height: 40vw;
-  background: rgba(147, 51, 234, 0.15);
+  background: var(--accent-glow-strong);
   animation-delay: -5s;
 }
